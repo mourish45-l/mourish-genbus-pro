@@ -31,7 +31,6 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { ChatHub } from './ChatHub';
-import { COMMON_INDIAN_HOSPITALS } from '../utils/indianHospitals';
 
 interface Props {
   customers: Record<string, CustomerRecord>;
@@ -149,15 +148,9 @@ export const CustomerPortal: React.FC<Props> = ({
     const cleanSearch = cleanPhone(searchedPhone);
     if (!cleanSearch) return null;
 
-    const foundInDb = Object.values(customers).find((c) => {
+    return Object.values(customers).find((c) => {
       const cClean = cleanPhone(c.phone);
       return cClean.includes(cleanSearch) || cleanSearch.includes(cClean);
-    });
-    if (foundInDb) return foundInDb;
-
-    return COMMON_INDIAN_HOSPITALS.find((h) => {
-      const hClean = cleanPhone(h.phone);
-      return hClean.includes(cleanSearch) || cleanSearch.includes(hClean);
     }) || null;
   }, [customers, searchedPhone]);
 
@@ -225,22 +218,6 @@ export const CustomerPortal: React.FC<Props> = ({
     setApprovingQuoteId(null);
     setSignatoryInput('');
   };
-
-  // Quick prefill numbers from authentic common Indian hospitals
-  const sampleCustomerPhones = useMemo(() => {
-    const list: { name: string; phone: string }[] = [];
-    Object.values(customers).forEach((c) => {
-      if (c.phone && !list.some((item) => item.phone === c.phone)) {
-        list.push({ name: c.name, phone: c.phone });
-      }
-    });
-    COMMON_INDIAN_HOSPITALS.forEach((h) => {
-      if (!list.some((item) => item.phone === h.phone)) {
-        list.push({ name: h.name, phone: h.phone });
-      }
-    });
-    return list.slice(0, 5);
-  }, [customers]);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -318,25 +295,6 @@ export const CustomerPortal: React.FC<Props> = ({
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
-        </div>
-
-        {/* Quick Click Sample Numbers */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-stone-100">
-          <span className="text-[11px] font-semibold text-stone-400">Quick Test Registered Numbers:</span>
-          {sampleCustomerPhones.map((s, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => {
-                setPhoneNumberInput(s.phone);
-                setSearchedPhone(s.phone);
-                setSelectedBiz(availableBusinesses[0]);
-              }}
-              className="px-3 py-1 rounded-xl bg-stone-100 hover:bg-teal-50 hover:text-teal-800 text-stone-700 text-xs font-mono font-medium transition-colors border border-stone-200"
-            >
-              {s.name}: <strong>{s.phone}</strong>
-            </button>
-          ))}
         </div>
       </div>
 

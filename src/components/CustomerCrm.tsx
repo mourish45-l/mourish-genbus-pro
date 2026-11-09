@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import type { CustomerRecord } from '../types';
-import { UserPlus, MessageSquare, Phone, Mail, Building, Trash2, Edit2, Sparkles, PlusCircle } from 'lucide-react';
-import { COMMON_INDIAN_HOSPITALS } from '../utils/indianHospitals';
+import { UserPlus, MessageSquare, Phone, Mail, Building, Trash2, Edit2, Plus } from 'lucide-react';
 
 interface Props {
   customers: Record<string, CustomerRecord>;
@@ -23,19 +22,6 @@ export const CustomerCrm: React.FC<Props> = ({
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
-
-  const handleLoadIndianHospitals = () => {
-    COMMON_INDIAN_HOSPITALS.forEach((hosp) => {
-      onSaveCustomer(hosp);
-    });
-  };
-
-  const handleSelectPreset = (h: CustomerRecord) => {
-    setName(h.name);
-    setPhone(h.phone);
-    setEmail(h.email);
-    setCompany(h.company);
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,43 +63,13 @@ export const CustomerCrm: React.FC<Props> = ({
             Customer Directory & Hospital CRM
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Registered Indian hospitals can use their Phone or Email in the Free Customer Portal to view finalized quotations, invoices, dispatches, and SHA-256 chat.
+            Real registered clients and hospitals. Contacts entered here use their real phone number to discover orders in the Customer Portal.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleLoadIndianHospitals}
-            className="px-4 py-2 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-bold hover:bg-indigo-100 flex items-center gap-1.5 transition"
-            title="Import all verified Indian Hospitals (Apollo, Kauvery, KMCH, MMHRC, SRMC, GRH, etc.)"
-          >
-            <Sparkles className="w-4 h-4 text-indigo-500" />
-            <span>Load Common Indian Hospitals</span>
-          </button>
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold px-2">
-            {custList.length} Registered
-          </span>
-        </div>
-      </div>
-
-      {/* Quick Indian Hospital Preset Chips */}
-      <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800 space-y-2">
-        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-          Quick Preset: Authentic Indian Hospitals
+        <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold px-2">
+          {custList.length} Registered Clients
         </span>
-        <div className="flex flex-wrap gap-2">
-          {COMMON_INDIAN_HOSPITALS.slice(0, 6).map((h) => (
-            <button
-              key={h.id}
-              type="button"
-              onClick={() => handleSelectPreset(h)}
-              className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 shadow-xs transition"
-            >
-              <PlusCircle className="w-3.5 h-3.5 text-indigo-500" />
-              <span>{h.name}</span>
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Add / Edit Customer Form */}

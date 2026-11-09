@@ -52,15 +52,6 @@ import { FirebaseRulesViewer } from './components/FirebaseRulesViewer';
 import { BusinessProfileEditor } from './components/BusinessProfileEditor';
 import { AuthGate } from './components/AuthGate';
 import { BusinessOnboardingModal } from './components/BusinessOnboardingModal';
-import { COMMON_INDIAN_HOSPITALS, COMMON_INDIAN_HOSPITAL_MAP } from './utils/indianHospitals';
-import {
-  INITIAL_INDIAN_QUOTATIONS,
-  INITIAL_INDIAN_INVOICES,
-  INITIAL_INDIAN_DELIVERIES,
-  INITIAL_INDIAN_DEALS,
-  INITIAL_INDIAN_PROJECTS,
-} from './utils/initialIndianHospitalData';
-
 import { ShieldCheck, Building2 } from 'lucide-react';
 
 const DEFAULT_BIZ_ID = 'mourish_developers_hq';
@@ -102,13 +93,13 @@ export default function App() {
   // Real Data Stores with Authentic Common Indian Hospitals
   const [catalogue, setCatalogue] = useState<Record<string, CatalogueItem>>({});
   const [stockAdjustments, setStockAdjustments] = useState<StockAdjustment[]>([]);
-  const [customers, setCustomers] = useState<Record<string, CustomerRecord>>(COMMON_INDIAN_HOSPITAL_MAP);
-  const [quotations, setQuotations] = useState<Record<string, Quotation>>(INITIAL_INDIAN_QUOTATIONS);
-  const [invoices, setInvoices] = useState<Record<string, Invoice>>(INITIAL_INDIAN_INVOICES);
-  const [deliveries, setDeliveries] = useState<Record<string, DeliveryChallan>>(INITIAL_INDIAN_DELIVERIES);
-  const [deals, setDeals] = useState<Record<string, Deal>>(INITIAL_INDIAN_DEALS);
-  const [projects, setProjects] = useState<Record<string, Project>>(INITIAL_INDIAN_PROJECTS);
-  const [activeQuoteId, setActiveQuoteId] = useState<string | null>('qt_apollo_01');
+  const [customers, setCustomers] = useState<Record<string, CustomerRecord>>({});
+  const [quotations, setQuotations] = useState<Record<string, Quotation>>({});
+  const [invoices, setInvoices] = useState<Record<string, Invoice>>({});
+  const [deliveries, setDeliveries] = useState<Record<string, DeliveryChallan>>({});
+  const [deals, setDeals] = useState<Record<string, Deal>>({});
+  const [projects, setProjects] = useState<Record<string, Project>>({});
+  const [activeQuoteId, setActiveQuoteId] = useState<string | null>(null);
 
   // FCM Push Notifications State
   const [fcmToken, setFcmToken] = useState<string | null>(null);
@@ -183,60 +174,60 @@ export default function App() {
       // 4. Customers
       const custRef = ref(db, `customers`);
       onValue(custRef, (snap) => {
-        if (snap.exists() && Object.keys(snap.val()).length > 0) {
+        if (snap.exists()) {
           setCustomers(snap.val());
         } else {
-          setCustomers(COMMON_INDIAN_HOSPITAL_MAP);
+          setCustomers({});
         }
       });
 
       // 5. Quotations
       const quotesRef = ref(db, `quotations`);
       onValue(quotesRef, (snap) => {
-        if (snap.exists() && Object.keys(snap.val()).length > 0) {
+        if (snap.exists()) {
           setQuotations(snap.val());
         } else {
-          setQuotations(INITIAL_INDIAN_QUOTATIONS);
+          setQuotations({});
         }
       });
 
       // 6. Invoices
       const invRef = ref(db, `invoices`);
       onValue(invRef, (snap) => {
-        if (snap.exists() && Object.keys(snap.val()).length > 0) {
+        if (snap.exists()) {
           setInvoices(snap.val());
         } else {
-          setInvoices(INITIAL_INDIAN_INVOICES);
+          setInvoices({});
         }
       });
 
       // 7. Deals Pipeline
       const dealsRef = ref(db, `deals`);
       onValue(dealsRef, (snap) => {
-        if (snap.exists() && Object.keys(snap.val()).length > 0) {
+        if (snap.exists()) {
           setDeals(snap.val());
         } else {
-          setDeals(INITIAL_INDIAN_DEALS);
+          setDeals({});
         }
       });
 
       // 8. Projects
       const projRef = ref(db, `projects`);
       onValue(projRef, (snap) => {
-        if (snap.exists() && Object.keys(snap.val()).length > 0) {
+        if (snap.exists()) {
           setProjects(snap.val());
         } else {
-          setProjects(INITIAL_INDIAN_PROJECTS);
+          setProjects({});
         }
       });
 
       // 9. Deliveries & Dispatches
       const delRef = ref(db, `deliveries`);
       onValue(delRef, (snap) => {
-        if (snap.exists() && Object.keys(snap.val()).length > 0) {
+        if (snap.exists()) {
           setDeliveries(snap.val());
         } else {
-          setDeliveries(INITIAL_INDIAN_DELIVERIES);
+          setDeliveries({});
         }
       });
     } catch (e) {
@@ -307,14 +298,14 @@ export default function App() {
   // Quotation Handlers
   const handleCreateNewQuote = () => {
     const newId = `qt_${Date.now()}`;
-    const firstCustId = Object.keys(customers)[0] || 'hosp_apollo_chennai';
-    const firstCustName = customers[firstCustId]?.name || 'Apollo Speciality Hospitals';
+    const firstCustId = Object.keys(customers)[0] || '';
+    const firstCustName = customers[firstCustId]?.name || '';
 
     const newQuote: Quotation = {
       id: newId,
       bizId: DEFAULT_BIZ_ID,
-      quoteNumber: `QT-${Math.floor(1000 + Math.random() * 9000)}`,
-      title: `${firstCustName} Medical Gas Pipeline & Modular OT Proposal`,
+      quoteNumber: `QT-${new Date().getFullYear()}-${String(Object.keys(quotations).length + 1).padStart(3, '0')}`,
+      title: firstCustName ? `${firstCustName} MGPS & Modular OT Proposal` : 'Medical Gas Pipeline & Modular OT Proposal',
       customerId: firstCustId,
       customerName: firstCustName,
       validUntil: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
