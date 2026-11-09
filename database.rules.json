@@ -1,0 +1,92 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "businesses": {
+      "$bizId": {
+        ".read": true,
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['name', 'phone', 'gstin'])"
+      }
+    },
+
+    "catalogues": {
+      "$bizId": {
+        ".read": true,
+        ".write": "auth != null",
+        "$itemId": {
+          ".validate": "newData.hasChildren(['name', 'rate', 'gst']) && newData.child('rate').isNumber() && newData.child('rate').val() >= 0"
+        }
+      }
+    },
+
+    "stock_adjustments": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "customers": {
+      ".read": true,
+      ".write": "auth != null || newData.exists()",
+      "$custId": {
+        ".read": true,
+        ".write": "auth != null || (data.exists() && newData.child('id').val() === $custId)",
+        ".validate": "newData.hasChildren(['name'])"
+      }
+    },
+
+    "quotations": {
+      ".read": true,
+      "$quoteId": {
+        ".read": true,
+        ".write": "auth != null || newData.child('customerApproved').val() === true",
+        ".validate": "newData.hasChildren(['quoteNumber', 'title', 'customerId', 'status'])"
+      }
+    },
+
+    "invoices": {
+      ".read": true,
+      "$invoiceId": {
+        ".read": true,
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['invoiceNumber', 'customerId', 'status'])"
+      }
+    },
+
+    "deals": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "projects": {
+      ".read": true,
+      "$projectId": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    },
+
+    "chats": {
+      "$threadId": {
+        ".read": true,
+        "messages": {
+          "$msgId": {
+            ".read": true,
+            ".write": "auth != null || $threadId.beginsWith('cust_')",
+            ".validate": "newData.hasChildren(['senderName', 'senderRole', 'sha256Hash', 'timestamp']) && newData.child('sha256Hash').isString() && newData.child('sha256Hash').val().length == 64"
+          }
+        }
+      }
+    },
+
+    "presence": {
+      "global": {
+        ".read": true,
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    }
+  }
+}

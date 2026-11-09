@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mourish GenBus — Realtime Collaborative CRM, Catalogue & Quotation Suite</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts & Material Symbols -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          colors: {
+            m3: {
+              bg: '#0B0F17',
+              surface: '#131B2E',
+              card: '#1C263B',
+              primary: '#6366F1',
+              accent: '#10B981',
+              warn: '#F59E0B',
+              danger: '#EF4444'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #0B0F17;
+      color: #F8FAFC;
+      overflow-x: hidden;
+    }
+    .glass {
+      background: rgba(28, 38, 59, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .m3-pill {
+      border-radius: 9999px;
+    }
+    .m3-card {
+      border-radius: 24px;
+    }
+    /* Print Styles for Finalized Quotation */
+    @media print {
+      body * { visibility: hidden; }
+      #printableQuotation, #printableQuotation * { visibility: visible; }
+      #printableQuotation {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white !important;
+        color: black !important;
+        padding: 24px !important;
+        box-shadow: none !important;
+      }
+      .no-print { display: none !important; }
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0B0F17; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+  <!-- TOP GLOBAL HEADER -->
+  <header class="glass sticky top-0 z-40 px-4 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+        <span class="material-symbols-rounded text-white">hub</span>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Mourish GenBus</h1>
+          <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Asia-SE1 Live</span>
+        </div>
+        <p class="text-xs text-slate-400">Realtime Quotation, Catalogue & Multi-Customer Chat Suite</p>
+      </div>
+    </div>
+
+    <!-- Portal Switcher & Active Editors Pill -->
+    <div class="flex items-center gap-3">
+      <div id="livePresenceBar" class="hidden md:flex items-center gap-1.5 bg-slate-900/90 border border-slate-700/70 px-3 py-1.5 rounded-full text-xs">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span class="text-slate-400">Live Now:</span>
+        <div id="presenceAvatars" class="flex items-center gap-1 font-semibold text-indigo-300"></div>
+      </div>
+
+      <!-- Mode Switch: Business vs Customer Portal -->
+      <div class="bg-slate-900 p-1 rounded-full border border-slate-800 flex items-center text-xs font-semibold">
+        <button id="switchBusinessBtn" onclick="switchPortalMode('business')" class="px-4 py-1.5 rounded-full bg-indigo-600 text-white transition flex items-center gap-1">
+          <span class="material-symbols-rounded text-sm">business_center</span> Business Portal
+        </button>
+        <button id="switchCustomerBtn" onclick="switchPortalMode('customer')" class="px-4 py-1.5 rounded-full text-slate-400 hover:text-white transition flex items-center gap-1">
+          <span class="material-symbols-rounded text-sm">person_search</span> Customer Portal
+        </button>
+      </div>
+
+      <!-- Auth User Badge -->
+      <div id="userStatusArea" class="hidden items-center gap-2 bg-slate-800/80 pl-3 pr-2 py-1 rounded-full border border-slate-700">
+        <span id="userDisplayName" class="text-xs font-medium text-slate-200 truncate max-w-[140px]">User</span>
+        <button onclick="openMfaModal()" title="SMS MFA & Security Settings" class="p-1 text-amber-400 hover:bg-slate-700 rounded-full">
+          <span class="material-symbols-rounded text-sm">shield_lock</span>
+        </button>
+        <button onclick="handleSignOut()" title="Sign Out" class="p-1 text-rose-400 hover:bg-slate-700 rounded-full">
+          <span class="material-symbols-rounded text-sm">logout</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toastBox" class="fixed bottom-5 right-5 z-50 hidden max-w-sm glass px-4 py-3 rounded-2xl border border-indigo-500/40 shadow-2xl flex items-center gap-3 text-sm">
+    <span class="material-symbols-rounded text-indigo-400">notifications_active</span>
+    <span id="toastMsg">Notification</span>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- 1. AUTHENTICATION SCREEN (FOR BUSINESS PORTAL)            -->
+  <!-- ========================================================= -->
+  <section id="authView" class="flex-1 flex items-center justify-center p-4">
+    <div class="glass m3-card max-w-md w-full p-6 lg:p-8 shadow-2xl border border-slate-800/80 space-y-6">
+      <div class="text-center space-y-2">
+        <div class="w-14 h-14 rounded-3xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center mx-auto text-indigo-400">
+          <span class="material-symbols-rounded text-3xl">lock_open_right</span>
+        </div>
+        <h2 class="text-2xl font-extrabold">Sign in to Business Workspace</h2>
+        <p class="text-xs text-slate-400">Collaborate in real-time on quotations, catalogues & team chat. Customers can switch directly to the Customer Portal above.</p>
+      </div>
+
+      <!-- Continue with Google -->
+      <button onclick="loginWithGoogle()" class="w-full py-3 px-4 m3-pill bg-white text-slate-900 font-bold text-sm flex items-center justify-center gap-3 hover:bg-slate-100 transition shadow">
+        <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.8C6.2 7.2 8.9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.6l3.7 2.9c2.2-2 3.7-5 3.7-8.7z"/><path fill="#FBBC05" d="M5.3 14.8c-.2-.8-.4-1.6-.4-2.5s.2-1.7.4-2.5L1.6 7C.6 9 0 11.2 0 13.5s.6 4.5 1.6 6.5l3.7-2.9z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5l-3.7 2.8C3.5 20.9 7.4 24 12 24z"/></svg>
+        Continue with Google
+      </button>
+
+      <div class="relative flex py-1 items-center">
+        <div class="flex-grow border-t border-slate-800"></div>
+        <span class="flex-shrink mx-3 text-xs text-slate-500 uppercase font-semibold">Or Email Login</span>
+        <div class="flex-grow border-t border-slate-800"></div>
+      </div>
+
+      <!-- Auth Tabs: Password vs Passwordless Link -->
+      <div class="grid grid-cols-2 gap-1 bg-slate-900 p-1 rounded-xl text-xs font-semibold">
+        <button id="tabEmailPass" onclick="toggleAuthTab('password')" class="py-2 rounded-lg bg-slate-800 text-white">Email & Password</button>
+        <button id="tabEmailLink" onclick="toggleAuthTab('link')" class="py-2 rounded-lg text-slate-400">Passwordless Link</button>
+      </div>
+
+      <!-- Email + Password Form -->
+      <div id="formEmailPass" class="space-y-3">
+        <input id="authNameInput" type="text" placeholder="Your Full Name / Editor Alias (for new signup)" class="w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-sm focus:border-indigo-500 focus:outline-none" />
+        <input id="authEmailInput" type="email" placeholder="Work Email Address" class="w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-sm focus:border-indigo-500 focus:outline-none" />
+        <input id="authPassInput" type="password" placeholder="Password (min 6 chars)" class="w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-sm focus:border-indigo-500 focus:outline-none" />
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button onclick="loginWithEmailPassword()" class="py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition">Sign In</button>
+          <button onclick="registerWithEmailPassword()" class="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition border border-slate-700">Create Account</button>
+        </div>
+      </div>
+
+      <!-- Passwordless Email Link Form -->
+      <div id="formEmailLink" class="hidden space-y-3">
+        <p class="text-xs text-slate-400">We'll send an instant magic sign-in link to your inbox—no password needed (Included in Spark Plan).</p>
+        <input id="magicEmailInput" type="email" placeholder="Enter your email address" class="w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-sm focus:border-indigo-500 focus:outline-none" />
+        <button onclick="sendPasswordlessEmailLink()" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition">Send Magic Login Link</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- 2. BUSINESS PORTAL VIEW                                   -->
+  <!-- ========================================================= -->
+  <main id="businessPortalView" class="hidden flex-1 flex flex-col lg:flex-row gap-4 p-4 lg:p-6 max-w-[1600px] w-full mx-auto">
+    
+    <!-- LEFT NAVIGATION RAIL -->
+    <aside class="lg:w-64 glass m3-card p-4 flex flex-col justify-between gap-4 shrink-0">
+      <div class="space-y-4">
+        <div class="p-3 rounded-2xl bg-indigo-600/10 border border-indigo-500/20">
+          <div class="text-[11px] uppercase font-bold text-indigo-400">Active Business ID</div>
+          <div id="activeBizBadge" class="font-bold text-sm truncate mt-0.5">Mourish Developers</div>
+          <div id="activeBizGstin" class="text-[11px] text-slate-400">GSTIN: 33CQLPT6813M1Z7</div>
+        </div>
+
+        <nav class="space-y-1 text-sm font-medium">
+          <button onclick="switchBizTab('quoteEditor')" id="nav_quoteEditor" class="biz-nav w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-indigo-600 text-white">
+            <span class="material-symbols-rounded">request_quote</span> Quotations & Live Edit
+          </button>
+          <button onclick="switchBizTab('catalogue')" id="nav_catalogue" class="biz-nav w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-300 hover:bg-slate-800/60">
+            <span class="material-symbols-rounded">inventory_2</span> Product Catalogue
+          </button>
+          <button onclick="switchBizTab('customers')" id="nav_customers" class="biz-nav w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-300 hover:bg-slate-800/60">
+            <span class="material-symbols-rounded">groups</span> Customers CRM
+          </button>
+          <button onclick="switchBizTab('teamChat')" id="nav_teamChat" class="biz-nav w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-300 hover:bg-slate-800/60">
+            <span class="material-symbols-rounded">forum</span> Multi-Chat & Files
+          </button>
+          <button onclick="switchBizTab('bizProfile')" id="nav_bizProfile" class="biz-nav w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-300 hover:bg-slate-800/60">
+            <span class="material-symbols-rounded">domain</span> Edit Business Profile
+          </button>
+        </nav>
+      </div>
+
+      <!-- Realtime Editor Activity Feed -->
+      <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+        <div class="flex items-center justify-between text-xs font-bold text-slate-400">
+          <span>LIVE AUDIT STAMP</span>
+          <span class="material-symbols-rounded text-sm text-emerald-400">bolt</span>
+        </div>
+        <div id="liveAuditBox" class="text-xs text-slate-300 space-y-1">
+          <div>Waiting for live edits...</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER MAIN WORKSPACE -->
+    <div class="flex-1 flex flex-col gap-4 min-w-0">
+
+      <!-- TAB A: QUOTATIONS & COLLABORATIVE LIVE EDITOR -->
+      <div id="bizTab_quoteEditor" class="biz-panel grid grid-cols-1 xl:grid-cols-12 gap-4">
+        
+        <!-- Left Column: Saved Drafts & Finalized Quotations List -->
+        <div class="xl:col-span-4 glass m3-card p-5 flex flex-col gap-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-base">All Quotations</h3>
+              <p class="text-xs text-slate-400">Drafts & Finalized (Synced Live)</p>
+            </div>
+            <button onclick="createNewQuotation()" class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1">
+              <span class="material-symbols-rounded text-sm">add</span> New Quote
+            </button>
+          </div>
+
+          <input id="searchQuotesInput" oninput="renderQuotationsList()" type="text" placeholder="Search quote #, customer, status..." class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs" />
+
+          <div id="quotationsListContainer" class="space-y-2.5 max-h-[600px] overflow-y-auto pr-1"></div>
+        </div>
+
+        <!-- Right Column: Realtime Collaborative Quotation Builder -->
+        <div class="xl:col-span-8 glass m3-card p-5 lg:p-6 space-y-5" id="printableQuotation">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <span id="quoteStatusPill" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">DRAFT</span>
+                <input id="quoteNumberInput" oninput="syncCurrentQuoteField('quoteNumber', this.value)" type="text" class="bg-transparent font-extrabold text-lg border-b border-transparent focus:border-indigo-500 focus:outline-none w-44" value="QT-2026-001" />
+              </div>
+              <p id="lastEditedByBanner" class="text-xs text-emerald-400 mt-1">Realtime collaboration active — edits sync immediately</p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 no-print">
+              <button onclick="setQuoteStatus('DRAFT')" class="px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold">Save as Draft</button>
+              <button onclick="setQuoteStatus('FINALIZED')" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1 shadow-lg shadow-emerald-600/20">
+                <span class="material-symbols-rounded text-sm">verified</span> Finalize for Customer
+              </button>
+              <button onclick="window.print()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs" title="Print / Export PDF">
+                <span class="material-symbols-rounded text-sm">print</span>
+              </button>
+              <button onclick="deleteCurrentQuotation()" class="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs" title="Delete Quote">
+                <span class="material-symbols-rounded text-sm">delete</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Select Customer & Validity -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label class="text-xs text-slate-400 font-semibold">Assign Customer</label>
+              <select id="quoteCustomerSelect" onchange="onQuoteCustomerChange(this.value)" class="w-full mt-1 px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm"></select>
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 font-semibold">Project / Subject Title</label>
+              <input id="quoteTitleInput" oninput="syncCurrentQuoteField('title', this.value)" type="text" placeholder="e.g. Medical Gas Pipeline & Web Portal" class="w-full mt-1 px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 font-semibold">Valid Until</label>
+              <input id="quoteDateInput" oninput="syncCurrentQuoteField('validUntil', this.value)" type="date" class="w-full mt-1 px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm" />
+            </div>
+          </div>
+
+          <!-- Quick Add from Catalogue Bar -->
+          <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-2 no-print">
+            <div class="flex items-center gap-2 text-xs font-semibold text-indigo-300">
+              <span class="material-symbols-rounded text-base">Auto_Awesome</span> Quick Insert from Catalogue:
+            </div>
+            <div class="flex flex-1 items-center gap-2 min-w-[240px]">
+              <select id="quickCatalogueSelect" class="flex-1 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs"></select>
+              <button onclick="insertItemFromCatalogue()" class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">+ Add Item</button>
+              <button onclick="addBlankLineItem()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700">+ Custom Row</button>
+            </div>
+          </div>
+
+          <!-- Line Items Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-[11px] uppercase text-slate-400">
+                  <th class="py-2.5 px-2">Item / Description</th>
+                  <th class="py-2.5 px-2 w-24">Qty</th>
+                  <th class="py-2.5 px-2 w-32">Unit Rate (₹)</th>
+                  <th class="py-2.5 px-2 w-24">GST %</th>
+                  <th class="py-2.5 px-2 w-32 text-right">Line Total (₹)</th>
+                  <th class="py-2.5 px-2 w-10 no-print"></th>
+                </tr>
+              </thead>
+              <tbody id="quoteItemsTableBody" class="divide-y divide-slate-800/60 text-sm"></tbody>
+            </table>
+          </div>
+
+          <!-- Totals & Terms -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-3 border-t border-slate-800">
+            <div>
+              <label class="text-xs text-slate-400 font-semibold">Notes & Payment Terms (Editable Live)</label>
+              <textarea id="quoteNotesInput" oninput="syncCurrentQuoteField('notes', this.value)" rows="3" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-700 text-xs" placeholder="50% advance with PO, balance upon commissioning..."></textarea>
+            </div>
+            <div class="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-2 text-sm">
+              <div class="flex justify-between text-slate-400">
+                <span>Subtotal:</span>
+                <span id="quoteSubtotalDisplay">₹0.00</span>
+              </div>
+              <div class="flex justify-between text-slate-400">
+                <span>Total GST Tax:</span>
+                <span id="quoteTaxDisplay">₹0.00</span>
+              </div>
+              <div class="flex justify-between items-center text-slate-400">
+                <span>Discount (₹):</span>
+                <input id="quoteDiscountInput" oninput="syncCurrentQuoteField('discount', Number(this.value||0))" type="number" class="w-28 px-2 py-1 rounded bg-slate-800 border border-slate-700 text-right text-xs text-white" value="0" />
+              </div>
+              <div class="flex justify-between font-extrabold text-lg text-emerald-400 pt-2 border-t border-slate-800">
+                <span>Grand Total:</span>
+                <span id="quoteGrandTotalDisplay">₹0.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB B: PRODUCT CATALOGUE MANAGER (FULL CRUD) -->
+      <div id="bizTab_catalogue" class="biz-panel hidden glass m3-card p-6 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="text-lg font-bold">Interactive Product & Service Catalogue</h3>
+            <p class="text-xs text-slate-400">Add, edit, or delete catalogue items. Changes sync across all team members immediately.</p>
+          </div>
+        </div>
+
+        <!-- Add / Update Catalogue Form -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 bg-slate-900/90 p-4 rounded-2xl border border-slate-800">
+          <input id="catItemId" type="hidden" />
+          <input id="catNameInput" type="text" placeholder="Product / Service Name" class="md:col-span-2 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm" />
+          <input id="catCategoryInput" type="text" placeholder="Category (e.g. Medical Gas / Web)" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm" />
+          <input id="catRateInput" type="number" placeholder="Unit Price (₹)" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm" />
+          <div class="flex gap-2">
+            <input id="catGstInput" type="number" placeholder="GST %" value="18" class="w-20 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm" />
+            <button onclick="saveCatalogueItem()" class="flex-1 py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs">Save Item</button>
+          </div>
+        </div>
+
+        <div id="catalogueGridContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+
+      <!-- TAB C: CUSTOMERS CRM (MULTI-CUSTOMER + EDIT) -->
+      <div id="bizTab_customers" class="biz-panel hidden glass m3-card p-6 space-y-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-bold">Customer Directory & Lookup Access</h3>
+            <p class="text-xs text-slate-400">Customers added here can enter their Phone or Email in the Customer Portal to view finalized quotes and chat with your team.</p>
+          </div>
+        </div>
+
+        <!-- Add / Edit Customer Form -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 bg-slate-900/90 p-4 rounded-2xl border border-slate-800">
+          <input id="custIdHidden" type="hidden" />
+          <input id="custNameInput" type="text" placeholder="Customer / Hospital Name" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm" />
+          <input id="custPhoneInput" type="text" placeholder="Phone (e.g. 9659233313)" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm" />
+          <input id="custEmailInput" type="email" placeholder="Customer Email" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm" />
+          <input id="custCompanyInput" type="text" placeholder="City / Organization" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm" />
+          <button onclick="saveCustomerRecord()" class="py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs">Save Customer</button>
+        </div>
+
+        <div id="customersListGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+
+      <!-- TAB D: TEAM & MULTI-CUSTOMER CHAT HUB (WITH EDIT MESSAGE & FILE UPLOAD) -->
+      <div id="bizTab_teamChat" class="biz-panel hidden glass m3-card overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[580px]">
+        <!-- Channels Sidebar: Internal Team + Every Customer -->
+        <div class="lg:col-span-4 border-r border-slate-800 p-4 flex flex-col gap-3 bg-slate-900/60">
+          <div class="font-bold text-sm flex items-center justify-between">
+            <span>Conversations</span>
+            <span class="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">Multi-Thread</span>
+          </div>
+          <p class="text-xs text-slate-400">Switch between your Internal Team room or message any individual customer directly.</p>
+          <div id="chatThreadsList" class="space-y-1.5 flex-1 overflow-y-auto"></div>
+        </div>
+
+        <!-- Active Chat Stream -->
+        <div class="lg:col-span-8 flex flex-col justify-between p-4 bg-slate-950/40">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <h4 id="activeChatHeaderTitle" class="font-bold text-sm text-white">Internal Team Channel</h4>
+              <p id="activeChatHeaderSub" class="text-xs text-slate-400">You can edit any sent message (shows whether edited before or after viewing) & share files.</p>
+            </div>
+          </div>
+
+          <div id="bizChatMessagesBox" class="flex-1 overflow-y-auto py-4 space-y-3 max-h-[420px] pr-2"></div>
+
+          <!-- Message Input & File Attachment -->
+          <div class="pt-3 border-t border-slate-800 flex items-center gap-2">
+            <label class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-400 cursor-pointer" title="Upload Image/Document">
+              <span class="material-symbols-rounded text-lg">attach_file</span>
+              <input id="bizChatFileInput" type="file" class="hidden" onchange="handleChatFileSelect(this, 'BUSINESS')" />
+            </label>
+            <input id="bizChatTextInput" onkeydown="if(event.key==='Enter') sendChatMessage('BUSINESS')" type="text" placeholder="Type message to team or customer..." class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm focus:border-indigo-500 focus:outline-none" />
+            <button onclick="sendChatMessage('BUSINESS')" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1">
+              <span>Send</span>
+              <span class="material-symbols-rounded text-sm">send</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB E: EDIT BUSINESS DETAILS -->
+      <div id="bizTab_bizProfile" class="biz-panel hidden glass m3-card p-6 max-w-2xl space-y-4">
+        <h3 class="text-lg font-bold">Edit Business Profile</h3>
+        <p class="text-xs text-slate-400">These details appear on all customer lookups and finalized quotations.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs text-slate-400">Business Name</label>
+            <input id="bizNameEdit" type="text" class="w-full mt-1 px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-slate-400">GSTIN / Tax Registration</label>
+            <input id="bizGstinEdit" type="text" class="w-full mt-1 px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-slate-400">Primary Phone</label>
+            <input id="bizPhoneEdit" type="text" class="w-full mt-1 px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-slate-400">Website / Domain</label>
+            <input id="bizWebEdit" type="text" class="w-full mt-1 px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm" />
+          </div>
+          <div class="md:col-span-2">
+            <label class="text-xs text-slate-400">Address & Tagline</label>
+            <input id="bizAddressEdit" type="text" class="w-full mt-1 px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm" />
+          </div>
+        </div>
+        <button onclick="saveBusinessProfile()" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm">Save Business Details</button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ========================================================= -->
+  <!-- 3. CUSTOMER PORTAL VIEW (LOOKUP -> FINAL QUOTES -> CHAT)  -->
+  <!-- ========================================================= -->
+  <section id="customerPortalView" class="hidden flex-1 p-4 lg:p-8 max-w-6xl w-full mx-auto space-y-6">
+    
+    <!-- Customer Step 1: Enter Details to Search Matching Businesses -->
+    <div class="glass m3-card p-6 lg:p-8 border border-slate-800 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <span class="text-xs uppercase font-bold px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300">Customer Self-Service Portal</span>
+          <h2 class="text-2xl font-extrabold mt-2">Find Your Business Quotations & Live Chat</h2>
+          <p class="text-xs text-slate-400">Enter your registered Phone Number or Email Address to discover businesses that have listed you as a customer.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2">
+        <input id="custLookupName" type="text" placeholder="Your Name" class="px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-sm" />
+        <input id="custLookupPhone" type="text" placeholder="Your Phone (e.g. 9659233313)" class="px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-sm" />
+        <input id="custLookupEmail" type="email" placeholder="Or Your Email Address" class="px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-sm" />
+        <button onclick="searchCustomerBusinesses()" class="py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm flex items-center justify-center gap-2">
+          <span class="material-symbols-rounded">search</span> Find My Quotations
+        </button>
+      </div>
+    </div>
+
+    <!-- Customer Step 2: Matched Business Profile, Finalized Quotations & Live Chat -->
+    <div id="customerMatchedWorkspace" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Left: Matched Business + Finalized Quotations + Editable Customer Profile -->
+      <div class="lg:col-span-7 space-y-4">
+        <div class="glass m3-card p-5 border border-emerald-500/30 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Matched Business</span>
+              <h3 id="custPortalBizTitle" class="text-lg font-extrabold mt-1">Mourish Developers</h3>
+              <p id="custPortalBizSub" class="text-xs text-slate-400"></p>
+            </div>
+          </div>
+          <!-- Customer Can Edit Their Own Details -->
+          <div class="pt-3 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input id="custSelfEditName" type="text" class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs" placeholder="Your Name" />
+            <input id="custSelfEditPhone" type="text" class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs" placeholder="Phone" />
+            <button onclick="updateCustomerSelfDetails()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold text-xs border border-slate-700">Update My Info</button>
+          </div>
+        </div>
+
+        <h4 class="font-bold text-sm uppercase tracking-wider text-slate-400 px-1">Your Finalized Quotations</h4>
+        <div id="customerFinalQuotationsList" class="space-y-4"></div>
+      </div>
+
+      <!-- Right: Dedicated Customer <-> Business Live Chat with File Upload & Message Editing -->
+      <div class="lg:col-span-5 glass m3-card p-5 flex flex-col justify-between min-h-[520px]">
+        <div class="border-b border-slate-800 pb-3">
+          <h4 class="font-bold text-base flex items-center gap-2">
+            <span class="material-symbols-rounded text-indigo-400">chat</span> Direct Discussion with Business
+          </h4>
+          <p class="text-xs text-slate-400">Upload requirement files, discuss pricing, or edit your sent messages anytime.</p>
+        </div>
+
+        <div id="custChatMessagesBox" class="flex-1 overflow-y-auto py-4 space-y-3 max-h-[380px] pr-1"></div>
+
+        <div class="pt-3 border-t border-slate-800 flex items-center gap-2">
+          <label class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-400 cursor-pointer" title="Upload File or Image">
+            <span class="material-symbols-rounded text-lg">upload_file</span>
+            <input type="file" class="hidden" onchange="handleChatFileSelect(this, 'CUSTOMER')" />
+          </label>
+          <input id="custChatTextInput" onkeydown="if(event.key==='Enter') sendChatMessage('CUSTOMER')" type="text" placeholder="Ask a question or discuss quote..." class="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm" />
+          <button onclick="sendChatMessage('CUSTOMER')" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs">Send</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- 4. SMS MFA & SPARK PLAN SECURITY MODAL                    -->
+  <!-- ========================================================= -->
+  <div id="mfaModal" class="fixed inset-0 z-50 hidden bg-black/75 flex items-center justify-center p-4">
+    <div class="glass m3-card max-w-md w-full p-6 space-y-4 border border-slate-700">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+          <span class="material-symbols-rounded text-amber-400">verified_user</span> SMS Multi-Factor Auth (MFA)
+        </h3>
+        <button onclick="closeMfaModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200 space-y-1">
+        <div class="font-bold">Spark Plan Notice:</div>
+        <p>Firebase requires the Blaze Plan for real carrier SMS delivery. On the Spark Plan, you can test this flow by adding a <strong>Test Phone Number & Verification Code</strong> in Firebase Console → Authentication → Sign-in method → Phone.</p>
+      </div>
+      <input id="mfaPhoneInput" type="tel" placeholder="+91 96592 33313" class="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm" />
+      <div id="recaptcha-mfa-container"></div>
+      <button onclick="enrollSmsMfa()" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs">Send MFA Enrollment SMS</button>
+      <div id="mfaCodeSection" class="hidden space-y-2 pt-2">
+        <input id="mfaOtpInput" type="text" placeholder="Enter 6-digit SMS OTP" class="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm" />
+        <button onclick="confirmSmsMfaOtp()" class="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs">Verify & Activate MFA</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- FIREBASE v13.2.0 + REALTIME DATABASE (SINGAPORE) SCRIPT   -->
+  <!-- ========================================================= -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-analytics.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      sendSignInLinkToEmail,
+      isSignInWithEmailLink,
+      signInWithEmailLink,
+      updateProfile,
+      signOut,
+      multiFactor,
+      PhoneAuthProvider,
+      PhoneMultiFactorGenerator,
+      RecaptchaVerifier
+    } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
+    import {
+      getDatabase,
+      ref,
+      set,
+      push,
+      update,
+      remove,
+      onValue,
+      get,
+      onDisconnect
+    } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js";
+
+    // Your exact Firebase Configuration + Asia-Southeast1 (Singapore) Realtime DB URL
+    const firebaseConfig = {
+      apiKey: "AIzaSyB81Z2c6rcs26lMY058-XrdZuz83Rpz9Ao",
+      authDomain: "mourish-genbus.firebaseapp.com",
+      databaseURL: "https://mourish-genbus-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "mourish-genbus",
+      storageBucket: "mourish-genbus.firebasestorage.app",
+      messagingSenderId: "197392397360",
+      appId: "1:197392397360:web:d6f64e781f53553a4869f5",
+      measurementId: "G-PLV0LGV7ZV"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    try { getAnalytics(app); } catch (e) {}
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    // Global State
+    const DEFAULT_BIZ_ID = "mourish_developers_hq";
+    let currentUser = null;
+    let currentEditorName = "Guest Collaborator";
+    let businessProfile = {
+      bizId: DEFAULT_BIZ_ID,
+      name: "Mourish Developers",
+      gstin: "33CQLPT6813M1Z7",
+      phone: "9659233313 / 9487410078",
+      website: "https://mourishdevelopers.vercel.app/",
+      address: "Healthcare Infrastructure & Web/App Solutions, Tamil Nadu, India"
+    };
+    let allCustomers = {};
+    let allCatalogue = {};
+    let allQuotations = {};
+    let activeQuoteId = null;
+    let activeBizChatThread = "team_internal";
+    let matchedCustomerRecord = null;
+    let mfaVerificationId = null;
+
+    // Toast Helper
+    window.showToast = (msg) => {
+      const box = document.getElementById("toastBox");
+      document.getElementById("toastMsg").textContent = msg;
+      box.classList.remove("hidden");
+      setTimeout(() => box.classList.add("hidden"), 3800);
+    };
+
+    // Complete Passwordless Email Link Sign-In on Page Load if applicable
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      let email = window.localStorage.getItem("emailForSignIn");
+      if (!email) email = window.prompt("Please confirm your email address to complete sign-in:");
+      signInWithEmailLink(auth, email, window.location.href)
+        .then(() => {
+          window.localStorage.removeItem("emailForSignIn");
+          window.history.replaceState({}, document.title, window.location.pathname);
+          showToast("Signed in via Passwordless Email Link!");
+        })
+        .catch((err) => showToast("Link Sign-In Error: " + err.message));
+    }
+
+    // Auth State Listener
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+      if (user) {
+        currentEditorName = user.displayName || (user.email ? user.email.split("@")[0] : "Team Editor");
+        document.getElementById("userDisplayName").textContent = currentEditorName;
+        document.getElementById("userStatusArea").classList.remove("hidden");
+        document.getElementById("userStatusArea").classList.add("flex");
+        document.getElementById("authView").classList.add("hidden");
+        document.getElementById("businessPortalView").classList.remove("hidden");
+        initRealtimeListeners();
+      } else {
+        document.getElementById("userStatusArea").classList.add("hidden");
+        if (!document.getElementById("customerPortalView").classList.contains("hidden")) return;
+        document.getElementById("authView").classList.remove("hidden");
+        document.getElementById("businessPortalView").classList.add("hidden");
+      }
+    });
+
+    // =========================================================
+    // AUTHENTICATION FUNCTIONS (SPARK PLAN COMPATIBLE)
+    // =========================================================
+    window.toggleAuthTab = (tab) => {
+      const isPass = tab === "password";
+      document.getElementById("formEmailPass").classList.toggle("hidden", !isPass);
+      document.getElementById("formEmailLink").classList.toggle("hidden", isPass);
+      document.getElementById("tabEmailPass").className = isPass ? "py-2 rounded-lg bg-slate-800 text-white" : "py-2 rounded-lg text-slate-400";
+      document.getElementById("tabEmailLink").className = !isPass ? "py-2 rounded-lg bg-slate-800 text-white" : "py-2 rounded-lg text-slate-400";
+    };
+
+    window.loginWithGoogle = async () => {
+      try {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+        showToast("Signed in with Google!");
+      } catch (e) {
+        showToast("Google Auth Error: " + e.message);
+      }
+    };
+
+    window.loginWithEmailPassword = async () => {
+      const email = document.getElementById("authEmailInput").value.trim();
+      const pass = document.getElementById("authPassInput").value;
+      if (!email || !pass) return showToast("Enter both email and password.");
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+        showToast("Welcome back!");
+      } catch (e) {
+        showToast("Sign-In Error: " + e.message);
+      }
+    };
+
+    window.registerWithEmailPassword = async () => {
+      const name = document.getElementById("authNameInput").value.trim() || "Team Member";
+      const email = document.getElementById("authEmailInput").value.trim();
+      const pass = document.getElementById("authPassInput").value;
+      if (!email || pass.length < 6) return showToast("Enter valid email & 6+ char password.");
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, email, pass);
+        await updateProfile(cred.user, { displayName: name });
+        currentEditorName = name;
+        document.getElementById("userDisplayName").textContent = name;
+        showToast("Account created & signed in!");
+      } catch (e) {
+        showToast("Signup Error: " + e.message);
+      }
+    };
+
+    window.sendPasswordlessEmailLink = async () => {
+      const email = document.getElementById("magicEmailInput").value.trim();
+      if (!email) return showToast("Please enter your email address first.");
+      const actionCodeSettings = {
+        url: window.location.href,
+        handleCodeInApp: true
+      };
+      try {
+        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+        window.localStorage.setItem("emailForSignIn", email);
+        showToast("Magic sign-in link sent! Check your email inbox.");
+      } catch (e) {
+        showToast("Email Link Error: " + e.message);
+      }
+    };
+
+    window.handleSignOut = async () => {
+      await signOut(auth);
+      showToast("Signed out.");
+    };
+
+    // =========================================================
+    // SMS MULTI-FACTOR AUTHENTICATION (MFA) ENROLLMENT
+    // =========================================================
+    window.openMfaModal = () => document.getElementById("mfaModal").classList.remove("hidden");
+    window.closeMfaModal = () => document.getElementById("mfaModal").classList.add("hidden");
+
+    window.enrollSmsMfa = async () => {
+      if (!currentUser) return showToast("Sign in first to configure SMS MFA.");
+      const phone = document.getElementById("mfaPhoneInput").value.trim();
+      if (!phone) return showToast("Enter phone number in +91 format.");
+      try {
+        if (!window.recaptchaVerifier) {
+          window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-mfa-container", { size: "invisible" });
+        }
+        const session = await multiFactor(currentUser).getSession();
+        const phoneInfoOptions = { phoneNumber: phone, session };
+        const phoneAuthProvider = new PhoneAuthProvider(auth);
+        mfaVerificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, window.recaptchaVerifier);
+        document.getElementById("mfaCodeSection").classList.remove("hidden");
+        showToast("OTP sent! Enter the code to finish MFA enrollment.");
+      } catch (e) {
+        showToast("Spark Plan SMS Notice: " + e.message);
+      }
+    };
+
+    window.confirmSmsMfaOtp = async () => {
+      const code = document.getElementById("mfaOtpInput").value.trim();
+      if (!code || !mfaVerificationId) return;
+      try {
+        const cred = PhoneAuthProvider.credential(mfaVerificationId, code);
+        const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
+        await multiFactor(currentUser).enroll(multiFactorAssertion, "Primary Mobile");
+        showToast("SMS Multi-Factor Authentication Activated!");
+        closeMfaModal();
+      } catch (e) {
+        showToast("MFA Verification Failed: " + e.message);
+      }
+    };
+
+    // =========================================================
+    // PORTAL & TAB NAVIGATION
+    // =========================================================
+    window.switchPortalMode = (mode) => {
+      const isBiz = mode === "business";
+      document.getElementById("switchBusinessBtn").className = isBiz
+        ? "px-4 py-1.5 rounded-full bg-indigo-600 text-white transition flex items-center gap-1"
+        : "px-4 py-1.5 rounded-full text-slate-400 hover:text-white transition flex items-center gap-1";
+      document.getElementById("switchCustomerBtn").className = !isBiz
+        ? "px-4 py-1.5 rounded-full bg-emerald-600 text-white transition flex items-center gap-1"
+        : "px-4 py-1.5 rounded-full text-slate-400 hover:text-white transition flex items-center gap-1";
+
+      if (isBiz) {
+        document.getElementById("customerPortalView").classList.add("hidden");
+        if (currentUser) {
+          document.getElementById("businessPortalView").classList.remove("hidden");
+        } else {
+          document.getElementById("authView").classList.remove("hidden");
+        }
+      } else {
+        document.getElementById("authView").classList.add("hidden");
+        document.getElementById("businessPortalView").classList.add("hidden");
+        document.getElementById("customerPortalView").classList.remove("hidden");
+        initRealtimeListeners(); // Load public lookup listeners
+      }
+    };
+
+    window.switchBizTab = (tabId) => {
+      document.querySelectorAll(".biz-panel").forEach(el => el.classList.add("hidden"));
+      document.getElementById("bizTab_" + tabId).classList.remove("hidden");
+      document.querySelectorAll(".biz-nav").forEach(btn => {
+        btn.className = "biz-nav w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-300 hover:bg-slate-800/60";
+      });
+      document.getElementById("nav_" + tabId).className = "biz-nav w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-indigo-600 text-white";
+    };
+
+    // =========================================================
+    // REALTIME DATABASE LISTENERS (ASIA-SOUTHEAST1 SINGAPORE)
+    // =========================================================
+    let listenersInitialized = false;
+    function initRealtimeListeners() {
+      if (listenersInitialized) return;
+      listenersInitialized = true;
+
+      // 1. Business Profile Listener
+      const bizRef = ref(db, `businesses/${DEFAULT_BIZ_ID}`);
+      onValue(bizRef, (snap) => {
+        if (snap.exists()) {
+          businessProfile = snap.val();
+        } else {
+          set(bizRef, businessProfile);
+        }
+        document.getElementById("activeBizBadge").textContent = businessProfile.name;
+        document.getElementById("activeBizGstin").textContent = "GSTIN: " + businessProfile.gstin;
+        document.getElementById("bizNameEdit").value = businessProfile.name || "";
+        document.getElementById("bizGstinEdit").value = businessProfile.gstin || "";
+        document.getElementById("bizPhoneEdit").value = businessProfile.phone || "";
+        document.getElementById("bizWebEdit").value = businessProfile.website || "";
+        document.getElementById("bizAddressEdit").value = businessProfile.address || "";
+      });
+
+      // 2. Catalogue Listener (Seed default items if empty)
+      const catRef = ref(db, `catalogues/${DEFAULT_BIZ_ID}`);
+      onValue(catRef, (snap) => {
+        if (snap.exists()) {
+          allCatalogue = snap.val();
+        } else {
+          const seedCat = {
+            cat_1: { id: "cat_1", name: "Medical Oxygen Manifold Pipeline System", category: "Healthcare Infrastructure", rate: 145000, gst: 18 },
+            cat_2: { id: "cat_2", name: "Modular ICU Bedside Gas Outlet Panel", category: "Healthcare Infrastructure", rate: 18500, gst: 18 },
+            cat_3: { id: "cat_3", name: "Enterprise Web & Mobile App Suite (Custom PWA)", category: "Software Development", rate: 65000, gst: 18 }
+          };
+          set(catRef, seedCat);
+          allCatalogue = seedCat;
+        }
+        renderCatalogueUI();
+      });
+
+      // 3. Customers Listener (Seed default customer if empty)
+      const custRef = ref(db, `customers`);
+      onValue(custRef, (snap) => {
+        if (snap.exists()) {
+          allCustomers = snap.val();
+        } else {
+          const seedCust = {
+            cust_demo1: {
+              id: "cust_demo1",
+              bizId: DEFAULT_BIZ_ID,
+              name: "Life Gas System / N. Pradeep",
+              phone: "9659233313",
+              email: "client@lifegassystem.in",
+              company: "Hospital Infrastructure Partner"
+            }
+          };
+          set(custRef, seedCust);
+          allCustomers = seedCust;
+        }
+        renderCustomersUI();
+        renderChatThreadsSidebar();
+      });
+
+      // 4. Quotations Listener (Realtime Collaboration)
+      const quotesRef = ref(db, `quotations`);
+      onValue(quotesRef, (snap) => {
+        if (snap.exists()) {
+          allQuotations = snap.val();
+        } else {
+          const firstQuoteId = "quote_default_1";
+          const seedQuote = {
+            [firstQuoteId]: {
+              id: firstQuoteId,
+              bizId: DEFAULT_BIZ_ID,
+              quoteNumber: "QT-2026-101",
+              title: "Turnkey Medical Gas Pipeline & Hospital Portal",
+              customerId: "cust_demo1",
+              customerName: "Life Gas System / N. Pradeep",
+              validUntil: "2026-12-31",
+              status: "FINALIZED",
+              discount: 5000,
+              notes: "Includes testing, certification, and 1-year priority support.",
+              lastEditedBy: "Mourish Nithin",
+              lastEditedAt: new Date().toLocaleTimeString(),
+              items: [
+                { name: "Medical Oxygen Manifold Pipeline System", qty: 1, rate: 145000, gst: 18 },
+                { name: "Enterprise Web & Mobile App Suite (Custom PWA)", qty: 1, rate: 65000, gst: 18 }
+              ]
+            }
+          };
+          set(quotesRef, seedQuote);
+          allQuotations = seedQuote;
+        }
+        if (!activeQuoteId || !allQuotations[activeQuoteId]) {
+          activeQuoteId = Object.keys(allQuotations)[0];
+        }
+        renderQuotationsList();
+        renderActiveQuotationEditor();
+        if (matchedCustomerRecord) renderCustomerPortalQuotations();
+      });
+
+      // 5. Realtime Presence Listener
+      const presRef = ref(db, `presence/global`);
+      if (currentUser) {
+        const myPresRef = ref(db, `presence/global/${currentUser.uid}`);
+        set(myPresRef, { name: currentEditorName, onlineAt: Date.now() });
+        onDisconnect(myPresRef).remove();
+      }
+      onValue(presRef, (snap) => {
+        const bar = document.getElementById("presenceAvatars");
+        bar.innerHTML = "";
+        if (snap.exists()) {
+          Object.values(snap.val()).forEach(p => {
+            const badge = document.createElement("span");
+            badge.className = "px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/40 text-[11px]";
+            badge.textContent = p.name;
+            bar.appendChild(badge);
+          });
+        }
+      });
+
+      // 6. Initialize Default Chat Thread
+      subscribeToChatThread(activeBizChatThread);
+    }
+
+    // =========================================================
+    // BUSINESS PROFILE SAVE
+    // =========================================================
+    window.saveBusinessProfile = async () => {
+      const updated = {
+        bizId: DEFAULT_BIZ_ID,
+        name: document.getElementById("bizNameEdit").value.trim(),
+        gstin: document.getElementById("bizGstinEdit").value.trim(),
+        phone: document.getElementById("bizPhoneEdit").value.trim(),
+        website: document.getElementById("bizWebEdit").value.trim(),
+        address: document.getElementById("bizAddressEdit").value.trim(),
+        lastEditedBy: currentEditorName
+      };
+      await set(ref(db, `businesses/${DEFAULT_BIZ_ID}`), updated);
+      showToast("Business Profile updated in Realtime Database!");
+    };
+
+    // =========================================================
+    // CATALOGUE CRUD
+    // =========================================================
+    function renderCatalogueUI() {
+      const grid = document.getElementById("catalogueGridContainer");
+      const quickSelect = document.getElementById("quickCatalogueSelect");
+      grid.innerHTML = "";
+      quickSelect.innerHTML = "";
+
+      Object.values(allCatalogue).forEach(item => {
+        // Quick dropdown option
+        const opt = document.createElement("option");
+        opt.value = item.id;
+        opt.textContent = `${item.name} — ₹${Number(item.rate).toLocaleString('en-IN')} (${item.gst}% GST)`;
+        quickSelect.appendChild(opt);
+
+        // Card in Catalogue Tab
+        const card = document.createElement("div");
+        card.className = "p-4 rounded-2xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between gap-3";
+        card.innerHTML = `
+          <div>
+            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">${item.category || 'General'}</span>
+            <h4 class="font-bold text-sm mt-2">${item.name}</h4>
+            <div class="text-emerald-400 font-extrabold text-base mt-1">₹${Number(item.rate).toLocaleString('en-IN')} <span class="text-xs text-slate-400 font-normal">+ ${item.gst}% GST</span></div>
+          </div>
+          <div class="flex items-center gap-2 pt-2 border-t border-slate-800">
+            <button onclick="editCatalogueItem('${item.id}')" class="flex-1 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold">Edit</button>
+            <button onclick="deleteCatalogueItem('${item.id}')" class="py-1.5 px-3 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs">Delete</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    window.saveCatalogueItem = async () => {
+      const existingId = document.getElementById("catItemId").value;
+      const name = document.getElementById("catNameInput").value.trim();
+      const category = document.getElementById("catCategoryInput").value.trim() || "General";
+      const rate = Number(document.getElementById("catRateInput").value || 0);
+      const gst = Number(document.getElementById("catGstInput").value || 18);
+      if (!name) return showToast("Enter product or service name.");
+
+      const id = existingId || "cat_" + Date.now();
+      await set(ref(db, `catalogues/${DEFAULT_BIZ_ID}/${id}`), { id, name, category, rate, gst, updatedBy: currentEditorName });
+      document.getElementById("catItemId").value = "";
+      document.getElementById("catNameInput").value = "";
+      document.getElementById("catCategoryInput").value = "";
+      document.getElementById("catRateInput").value = "";
+      showToast("Catalogue item saved!");
+    };
+
+    window.editCatalogueItem = (id) => {
+      const item = allCatalogue[id];
+      if (!item) return;
+      document.getElementById("catItemId").value = item.id;
+      document.getElementById("catNameInput").value = item.name;
+      document.getElementById("catCategoryInput").value = item.category;
+      document.getElementById("catRateInput").value = item.rate;
+      document.getElementById("catGstInput").value = item.gst;
+      showToast("Editing item: " + item.name);
+    };
+
+    window.deleteCatalogueItem = async (id) => {
+      await remove(ref(db, `catalogues/${DEFAULT_BIZ_ID}/${id}`));
+      showToast("Catalogue item removed.");
+    };
+
+    // =========================================================
+    // CUSTOMERS CRM CRUD
+    // =========================================================
+    function renderCustomersUI() {
+      const grid = document.getElementById("customersListGrid");
+      const custSelect = document.getElementById("quoteCustomerSelect");
+      grid.innerHTML = "";
+      custSelect.innerHTML = "";
+
+      Object.values(allCustomers).forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.id;
+        opt.textContent = `${c.name} (${c.phone})`;
+        custSelect.appendChild(opt);
+
+        const card = document.createElement("div");
+        card.className = "p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2";
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <h4 class="font-bold text-sm">${c.name}</h4>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${c.company || 'Client'}</span>
+          </div>
+          <div class="text-xs text-slate-400 space-y-0.5">
+            <div>📞 ${c.phone}</div>
+            <div>✉️ ${c.email || 'No email'}</div>
+          </div>
+          <div class="flex items-center gap-2 pt-2 border-t border-slate-800">
+            <button onclick="editCustomerRecord('${c.id}')" class="flex-1 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold">Edit</button>
+            <button onclick="openCustomerChatFromCrm('${c.id}')" class="flex-1 py-1.5 rounded-lg bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 text-xs font-semibold">Message</button>
+            <button onclick="deleteCustomerRecord('${c.id}')" class="py-1.5 px-2.5 rounded-lg bg-rose-500/10 text-rose-400 text-xs">✕</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    window.saveCustomerRecord = async () => {
+      const existingId = document.getElementById("custIdHidden").value;
+      const name = document.getElementById("custNameInput").value.trim();
+      const phone = document.getElementById("custPhoneInput").value.trim();
+      const email = document.getElementById("custEmailInput").value.trim();
+      const company = document.getElementById("custCompanyInput").value.trim();
+      if (!name || (!phone && !email)) return showToast("Enter customer name and phone or email.");
+
+      const id = existingId || "cust_" + Date.now();
+      await set(ref(db, `customers/${id}`), {
+        id,
+        bizId: DEFAULT_BIZ_ID,
+        name,
+        phone,
+        email,
+        company,
+        updatedBy: currentEditorName
+      });
+      document.getElementById("custIdHidden").value = "";
+      document.getElementById("custNameInput").value = "";
+      document.getElementById("custPhoneInput").value = "";
+      document.getElementById("custEmailInput").value = "";
+      document.getElementById("custCompanyInput").value = "";
+      showToast("Customer saved!");
+    };
+
+    window.editCustomerRecord = (id) => {
+      const c = allCustomers[id];
+      if (!c) return;
+      document.getElementById("custIdHidden").value = c.id;
+      document.getElementById("custNameInput").value = c.name;
+      document.getElementById("custPhoneInput").value = c.phone;
+      document.getElementById("custEmailInput").value = c.email;
+      document.getElementById("custCompanyInput").value = c.company;
+    };
+
+    window.deleteCustomerRecord = async (id) => {
+      await remove(ref(db, `customers/${id}`));
+      showToast("Customer deleted.");
+    };
+
+    window.openCustomerChatFromCrm = (custId) => {
+      switchBizTab("teamChat");
+      subscribeToChatThread("cust_" + custId);
+    };
+
+    // =========================================================
+    // REALTIME COLLABORATIVE QUOTATION EDITOR
+    // =========================================================
+    window.renderQuotationsList = () => {
+      const list = document.getElementById("quotationsListContainer");
+      const q = (document.getElementById("searchQuotesInput")?.value || "").toLowerCase();
+      list.innerHTML = "";
+
+      Object.values(allQuotations).forEach(quote => {
+        const matchStr = `${quote.quoteNumber} ${quote.title} ${quote.customerName} ${quote.status}`.toLowerCase();
+        if (q && !matchStr.includes(q)) return;
+
+        const isSelected = quote.id === activeQuoteId;
+        const isFinal = quote.status === "FINALIZED";
+        const card = document.createElement("div");
+        card.onclick = () => { activeQuoteId = quote.id; renderQuotationsList(); renderActiveQuotationEditor(); };
+        card.className = `p-3.5 rounded-2xl cursor-pointer transition border ${
+          isSelected ? "bg-indigo-600/20 border-indigo-500" : "bg-slate-900/70 border-slate-800 hover:border-slate-700"
+        }`;
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-xs text-indigo-300">${quote.quoteNumber || 'QT'}</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              isFinal ? "bg-emerald-500/20 text-emerald-300" : "bg-amber-500/20 text-amber-300"
+            }">${quote.status}</span>
+          </div>
+          <div class="font-bold text-sm mt-1 truncate">${quote.title || 'Untitled Quotation'}</div>
+          <div class="text-xs text-slate-400 truncate">Client: ${quote.customerName || 'Unassigned'}</div>
+          <div class="text-[11px] text-slate-500 mt-1.5 flex items-center justify-between">
+            <span>Edited by: <strong class="text-slate-300">${quote.lastEditedBy || 'Team'}</strong></span>
+            <span>${quote.lastEditedAt || ''}</span>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    };
+
+    function renderActiveQuotationEditor() {
+      const quote = allQuotations[activeQuoteId];
+      if (!quote) return;
+
+      document.getElementById("quoteNumberInput").value = quote.quoteNumber || "";
+      document.getElementById("quoteTitleInput").value = quote.title || "";
+      document.getElementById("quoteDateInput").value = quote.validUntil || "";
+      document.getElementById("quoteNotesInput").value = quote.notes || "";
+      document.getElementById("quoteDiscountInput").value = quote.discount || 0;
+      document.getElementById("quoteCustomerSelect").value = quote.customerId || "";
+
+      const pill = document.getElementById("quoteStatusPill");
+      pill.textContent = quote.status || "DRAFT";
+      pill.className = quote.status === "FINALIZED"
+        ? "px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+        : "px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30";
+
+      const auditText = `Last edited by ${quote.lastEditedBy || 'Team'} at ${quote.lastEditedAt || 'just now'}`;
+      document.getElementById("lastEditedByBanner").textContent = auditText;
+      document.getElementById("liveAuditBox").innerHTML = `
+        <div class="text-emerald-400 font-semibold">${quote.quoteNumber}</div>
+        <div>By: <strong>${quote.lastEditedBy || 'Team'}</strong></div>
+        <div class="text-[11px] text-slate-400">Time: ${quote.lastEditedAt || ''}</div>
+      `;
+
+      // Render Line Items
+      const tbody = document.getElementById("quoteItemsTableBody");
+      tbody.innerHTML = "";
+      const items = quote.items || [];
+      let subtotal = 0;
+      let totalTax = 0;
+
+      items.forEach((item, idx) => {
+        const qty = Number(item.qty || 0);
+        const rate = Number(item.rate || 0);
+        const gst = Number(item.gst || 0);
+        const rawLine = qty * rate;
+        const taxLine = rawLine * (gst / 100);
+        const lineTotal = rawLine + taxLine;
+        subtotal += rawLine;
+        totalTax += taxLine;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="py-2 px-2">
+            <input type="text" value="${item.name || ''}" oninput="updateQuoteLineItem(${idx}, 'name', this.value)" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs" />
+          </td>
+          <td class="py-2 px-2">
+            <input type="number" value="${qty}" oninput="updateQuoteLineItem(${idx}, 'qty', Number(this.value||0))" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs" />
+          </td>
+          <td class="py-2 px-2">
+            <input type="number" value="${rate}" oninput="updateQuoteLineItem(${idx}, 'rate', Number(this.value||0))" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs" />
+          </td>
+          <td class="py-2 px-2">
+            <input type="number" value="${gst}" oninput="updateQuoteLineItem(${idx}, 'gst', Number(this.value||0))" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs" />
+          </td>
+          <td class="py-2 px-2 text-right font-bold text-slate-200">
+            ₹${lineTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+          </td>
+          <td class="py-2 px-2 text-right no-print">
+            <button onclick="removeQuoteLineItem(${idx})" class="text-rose-400 hover:text-rose-300 text-xs">✕</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const discount = Number(quote.discount || 0);
+      const grandTotal = Math.max(0, subtotal + totalTax - discount);
+      document.getElementById("quoteSubtotalDisplay").textContent = `₹${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+      document.getElementById("quoteTaxDisplay").textContent = `₹${totalTax.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+      document.getElementById("quoteGrandTotalDisplay").textContent = `₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    }
+
+    window.syncCurrentQuoteField = async (field, value) => {
+      if (!activeQuoteId) return;
+      await update(ref(db, `quotations/${activeQuoteId}`), {
+        [field]: value,
+        lastEditedBy: currentEditorName,
+        lastEditedAt: new Date().toLocaleTimeString()
+      });
+    };
+
+    window.onQuoteCustomerChange = async (custId) => {
+      const cust = allCustomers[custId];
+      if (!activeQuoteId || !cust) return;
+      await update(ref(db, `quotations/${activeQuoteId}`), {
+        customerId: custId,
+        customerName: cust.name,
+        lastEditedBy: currentEditorName,
+        lastEditedAt: new Date().toLocaleTimeString()
+      });
+    };
+
+    window.updateQuoteLineItem = async (idx, key, val) => {
+      const quote = allQuotations[activeQuoteId];
+      if (!quote || !quote.items) return;
+      quote.items[idx][key] = val;
+      await update(ref(db, `quotations/${activeQuoteId}`), {
+        items: quote.items,
+        lastEditedBy: currentEditorName,
+        lastEditedAt: new Date().toLocaleTimeString()
+      });
+    };
+
+    window.insertItemFromCatalogue = async () => {
+      const catId = document.getElementById("quickCatalogueSelect").value;
+      const catItem = allCatalogue[catId];
+      const quote = allQuotations[activeQuoteId];
+      if (!catItem || !quote) return;
+      const items = quote.items || [];
+      items.push({ name: catItem.name, qty: 1, rate: Number(catItem.rate), gst: Number(catItem.gst) });
+      await update(ref(db, `quotations/${activeQuoteId}`), {
+        items,
+        lastEditedBy: currentEditorName,
+        lastEditedAt: new Date().toLocaleTimeString()
+      });
+    };
+
+    window.addBlankLineItem = async () => {
+      const quote = allQuotations[activeQuoteId];
+      if (!quote) return;
+      const items = quote.items || [];
+      items.push({ name: "Custom Service / Supply Item", qty: 1, rate: 1000, gst: 18 });
+      await update(ref(db, `quotations/${activeQuoteId}`), {
+        items,
+        lastEditedBy: currentEditorName,
+        lastEditedAt: new Date().toLocaleTimeString()
+      });
+    };
+
+    window.removeQuoteLineItem = async (idx) => {
+      const quote = allQuotations[activeQuoteId];
+      if (!quote || !quote.items) return;
+      quote.items.splice(idx, 1);
+      await update(ref(db, `quotations/${activeQuoteId}`), {
+        items: quote.items,
+        lastEditedBy: currentEditorName,
+        lastEditedAt: new Date().toLocaleTimeString()
+      });
+    };
+
+    window.setQuoteStatus = async (status) => {
+      if (!activeQuoteId) return;
+      await update(ref(db, `quotations/${activeQuoteId}`), {
+        status,
+        lastEditedBy: currentEditorName,
+        lastEditedAt: new Date().toLocaleTimeString()
+      });
+      showToast(status === "FINALIZED" ? "Quotation Finalized! Customer can now view & print it." : "Saved as Draft.");
+    };
+
+    window.createNewQuotation = async () => {
+      const newId = "quote_" + Date.now();
+      const firstCustId = Object.keys(allCustomers)[0] || "";
+      const firstCustName = allCustomers[firstCustId]?.name || "Walk-in Client";
+      const newQuote = {
+        id: newId,
+        bizId: DEFAULT_BIZ_ID,
+        quoteNumber: "QT-" + Math.floor(1000 + Math.random() * 9000),
+        title: "New Project Proposal",
+        customerId: firstCustId,
+        customerName: firstCustName,
+        validUntil: new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0],
+        status: "DRAFT",
+        discount: 0,
+        notes: "Standard delivery & warranty terms apply.",
+        lastEditedBy: currentEditorName,
+        lastEditedAt: new Date().toLocaleTimeString(),
+        items: [{ name: "Consultation & Implementation", qty: 1, rate: 15000, gst: 18 }]
+      };
+      await set(ref(db, `quotations/${newId}`), newQuote);
+      activeQuoteId = newId;
+      showToast("Created new collaborative quotation draft!");
+    };
+
+    window.deleteCurrentQuotation = async () => {
+      if (!activeQuoteId) return;
+      if (Object.keys(allQuotations).length <= 1) return showToast("Keep at least one quotation in workspace.");
+      await remove(ref(db, `quotations/${activeQuoteId}`));
+      activeQuoteId = Object.keys(allQuotations)[0];
+      showToast("Quotation deleted.");
+    };
+
+    // =========================================================
+    // MULTI-CUSTOMER & INTERNAL TEAM CHAT + MESSAGE EDITING
+    // =========================================================
+    function renderChatThreadsSidebar() {
+      const box = document.getElementById("chatThreadsList");
+      if (!box) return;
+      box.innerHTML = "";
+
+      // 1. Internal Team Thread
+      const teamBtn = document.createElement("button");
+      const isTeam = activeBizChatThread === "team_internal";
+      teamBtn.onclick = () => subscribeToChatThread("team_internal");
+      teamBtn.className = `w-full text-left p-3 rounded-2xl transition flex items-center justify-between ${
+        isTeam ? "bg-indigo-600 text-white" : "bg-slate-900 hover:bg-slate-800 text-slate-200"
+      }`;
+      teamBtn.innerHTML = `
+        <div class="flex items-center gap-2.5">
+          <span class="material-symbols-rounded text-lg">groups_2</span>
+          <div>
+            <div class="font-bold text-xs">Internal Team Room</div>
+            <div class="text-[10px] opacity-80">Staff & Collaborators</div>
+          </div>
+        </div>
+      `;
+      box.appendChild(teamBtn);
+
+      // 2. Every Customer Thread (Message multiple customers independently)
+      Object.values(allCustomers).forEach(c => {
+        const tId = "cust_" + c.id;
+        const isActive = activeBizChatThread === tId;
+        const btn = document.createElement("button");
+        btn.onclick = () => subscribeToChatThread(tId);
+        btn.className = `w-full text-left p-3 rounded-2xl transition flex items-center justify-between ${
+          isActive ? "bg-indigo-600 text-white" : "bg-slate-900 hover:bg-slate-800 text-slate-200"
+        }`;
+        btn.innerHTML = `
+          <div class="flex items-center gap-2.5 truncate">
+            <span class="material-symbols-rounded text-lg">person</span>
+            <div class="truncate">
+              <div class="font-bold text-xs truncate">${c.name}</div>
+              <div class="text-[10px] opacity-80 truncate">${c.phone} • ${c.company || 'Customer'}</div>
+            </div>
+          </div>
+        `;
+        box.appendChild(btn);
+      });
+    }
+
+    let currentChatUnsub = null;
+    function subscribeToChatThread(threadId) {
+      activeBizChatThread = threadId;
+      renderChatThreadsSidebar();
+
+      if (threadId === "team_internal") {
+        document.getElementById("activeChatHeaderTitle").textContent = "Internal Team Collaboration Room";
+      } else {
+        const custId = threadId.replace("cust_", "");
+        const cust = allCustomers[custId];
+        document.getElementById("activeChatHeaderTitle").textContent = cust ? `Customer Chat: ${cust.name} (${cust.phone})` : "Customer Chat";
+      }
+
+      const msgRef = ref(db, `chats/${threadId}/messages`);
+      onValue(msgRef, (snap) => {
+        const msgs = snap.exists() ? Object.entries(snap.val()) : [];
+        renderMessagesIntoBox(msgs, "bizChatMessagesBox", "BUSINESS", threadId);
+        if (matchedCustomerRecord && threadId === "cust_" + matchedCustomerRecord.id) {
+          renderMessagesIntoBox(msgs, "custChatMessagesBox", "CUSTOMER", threadId);
+        }
+      });
+    }
+
+    function renderMessagesIntoBox(entries, containerId, viewerRole, threadId) {
+      const box = document.getElementById(containerId);
+      if (!box) return;
+      box.innerHTML = "";
+
+      entries.forEach(([msgId, m]) => {
+        // Mark message as seen by opposite party if not yet viewed
+        if (viewerRole === "CUSTOMER" && m.senderRole === "BUSINESS" && !m.seenByReceiver) {
+          update(ref(db, `chats/${threadId}/messages/${msgId}`), { seenByReceiver: true });
+        }
+        if (viewerRole === "BUSINESS" && m.senderRole === "CUSTOMER" && !m.seenByReceiver) {
+          update(ref(db, `chats/${threadId}/messages/${msgId}`), { seenByReceiver: true });
+        }
+
+        const isMine = (viewerRole === "BUSINESS" && m.senderRole === "BUSINESS") ||
+                       (viewerRole === "CUSTOMER" && m.senderRole === "CUSTOMER");
+
+        const wrap = document.createElement("div");
+        wrap.className = `flex flex-col ${isMine ? "items-end" : "items-start"}`;
+
+        let editBadge = "";
+        if (m.edited) {
+          editBadge = m.editedBeforeSeen
+            ? `<span class="text-[10px] text-emerald-300 ml-1">(edited before viewing)</span>`
+            : `<span class="text-[10px] text-amber-300 ml-1">(edited)</span>`;
+        }
+
+        let fileAttachmentHtml = "";
+        if (m.fileData) {
+          if (m.fileType && m.fileType.startsWith("image/")) {
+            fileAttachmentHtml = `<img src="${m.fileData}" class="mt-2 rounded-xl max-h-44 border border-slate-700" />`;
+          } else {
+            fileAttachmentHtml = `<a href="${m.fileData}" download="${m.fileName || 'file'}" class="mt-2 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-900/90 text-indigo-300 text-xs border border-slate-700">📎 Download ${m.fileName || 'Attachment'}</a>`;
+          }
+        }
+
+        wrap.innerHTML = `
+          <div class="max-w-[80%] rounded-2xl px-4 py-2.5 text-xs ${
+            isMine ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-100 border border-slate-700"
+          }">
+            <div class="flex items-center justify-between gap-3 text-[10px] opacity-80 mb-1">
+              <span class="font-bold">${m.senderName}</span>
+              <span>${m.timeString || ''} ${m.seenByReceiver ? '✓✓ Seen' : '✓ Sent'}</span>
+            </div>
+            <div class="text-sm leading-relaxed break-words">${m.text || ''} ${editBadge}</div>
+            ${fileAttachmentHtml}
+            ${isMine ? `
+              <div class="mt-1.5 pt-1 border-t border-white/10 flex justify-end gap-2 text-[10px]">
+                <button onclick="promptEditChatMessage('${threadId}', '${msgId}')" class="underline hover:text-amber-200">Edit Message</button>
+                <button onclick="deleteChatMessage('${threadId}', '${msgId}')" class="underline hover:text-rose-300">Delete</button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+        box.appendChild(wrap);
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+
+    window.sendChatMessage = async (senderRole, attachmentPayload = null) => {
+      const isBiz = senderRole === "BUSINESS";
+      const inputEl = document.getElementById(isBiz ? "bizChatTextInput" : "custChatTextInput");
+      const text = inputEl ? inputEl.value.trim() : "";
+      if (!text && !attachmentPayload) return;
+
+      const threadId = isBiz ? activeBizChatThread : ("cust_" + (matchedCustomerRecord?.id || "cust_demo1"));
+      const senderName = isBiz ? currentEditorName : (matchedCustomerRecord?.name || "Customer");
+
+      const newMsgRef = push(ref(db, `chats/${threadId}/messages`));
+      await set(newMsgRef, {
+        senderId: currentUser?.uid || "customer_portal",
+        senderName,
+        senderRole,
+        text,
+        fileName: attachmentPayload?.fileName || null,
+        fileType: attachmentPayload?.fileType || null,
+        fileData: attachmentPayload?.fileData || null,
+        seenByReceiver: false,
+        edited: false,
+        editedBeforeSeen: false,
+        timestamp: Date.now(),
+        timeString: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      if (inputEl) inputEl.value = "";
+    };
+
+    // Edit Sent Message (Tracks whether receiver had viewed it yet!)
+    window.promptEditChatMessage = async (threadId, msgId) => {
+      const msgRef = ref(db, `chats/${threadId}/messages/${msgId}`);
+      const snap = await get(msgRef);
+      if (!snap.exists()) return;
+      const msg = snap.val();
+      const updatedText = window.prompt("Edit your message:", msg.text || "");
+      if (updatedText === null || updatedText.trim() === "") return;
+
+      await update(msgRef, {
+        text: updatedText.trim(),
+        edited: true,
+        editedBeforeSeen: !msg.seenByReceiver
+      });
+      showToast(!msg.seenByReceiver ? "Message edited before recipient viewed it!" : "Message updated!");
+    };
+
+    window.deleteChatMessage = async (threadId, msgId) => {
+      await remove(ref(db, `chats/${threadId}/messages/${msgId}`));
+      showToast("Message deleted.");
+    };
+
+    // File Upload in Chat (Base64 Realtime Sync for instant Spark Plan compatibility)
+    window.handleChatFileSelect = (input, role) => {
+      const file = input.files?.[0];
+      if (!file) return;
+      if (file.size > 1.5 * 1024 * 1024) {
+        return showToast("Please choose a file under 1.5 MB for Realtime DB sync.");
+      }
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        await sendChatMessage(role, {
+          fileName: file.name,
+          fileType: file.type,
+          fileData: e.target.result
+        });
+        showToast("File uploaded to chat!");
+      };
+      reader.readAsDataURL(file);
+    };
+
+    // =========================================================
+    // CUSTOMER PORTAL LOOKUP & FINALIZED QUOTATIONS VIEWER
+    // =========================================================
+    window.searchCustomerBusinesses = () => {
+      const name = document.getElementById("custLookupName").value.trim().toLowerCase();
+      const phone = document.getElementById("custLookupPhone").value.trim();
+      const email = document.getElementById("custLookupEmail").value.trim().toLowerCase();
+
+      if (!phone && !email && !name) {
+        return showToast("Please enter your Phone Number, Email, or Name to search.");
+      }
+
+      const found = Object.values(allCustomers).find(c =>
+        (phone && c.phone && c.phone.includes(phone)) ||
+        (email && c.email && c.email.toLowerCase() === email) ||
+        (name && c.name && c.name.toLowerCase().includes(name))
+      );
+
+      if (!found) {
+        return showToast("No matching customer record found. Try phone: 9659233313");
+      }
+
+      matchedCustomerRecord = found;
+      document.getElementById("customerMatchedWorkspace").classList.remove("hidden");
+      document.getElementById("custPortalBizTitle").textContent = businessProfile.name;
+      document.getElementById("custPortalBizSub").textContent = `${businessProfile.address} • GSTIN: ${businessProfile.gstin} • 📞 ${businessProfile.phone}`;
+
+      document.getElementById("custSelfEditName").value = found.name || "";
+      document.getElementById("custSelfEditPhone").value = found.phone || "";
+
+      renderCustomerPortalQuotations();
+      subscribeToChatThread("cust_" + found.id);
+      showToast(`Connected to ${businessProfile.name}!`);
+    };
+
+    window.updateCustomerSelfDetails = async () => {
+      if (!matchedCustomerRecord) return;
+      const newName = document.getElementById("custSelfEditName").value.trim();
+      const newPhone = document.getElementById("custSelfEditPhone").value.trim();
+      await update(ref(db, `customers/${matchedCustomerRecord.id}`), {
+        name: newName,
+        phone: newPhone
+      });
+      matchedCustomerRecord.name = newName;
+      matchedCustomerRecord.phone = newPhone;
+      showToast("Your customer profile has been updated!");
+    };
+
+    function renderCustomerPortalQuotations() {
+      const container = document.getElementById("customerFinalQuotationsList");
+      if (!container || !matchedCustomerRecord) return;
+      container.innerHTML = "";
+
+      const finalizedQuotes = Object.values(allQuotations).filter(
+        q => q.customerId === matchedCustomerRecord.id && q.status === "FINALIZED"
+      );
+
+      if (finalizedQuotes.length === 0) {
+        container.innerHTML = `
+          <div class="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 text-center text-xs text-slate-400">
+            No finalized quotations yet. You can message ${businessProfile.name} in the chat panel to request updates!
+          </div>
+        `;
+        return;
+      }
+
+      finalizedQuotes.forEach(q => {
+        let sub = 0, tax = 0;
+        const rowsHtml = (q.items || []).map(item => {
+          const raw = Number(item.qty || 0) * Number(item.rate || 0);
+          const gstAmt = raw * (Number(item.gst || 0) / 100);
+          sub += raw;
+          tax += gstAmt;
+          return `
+            <tr class="border-b border-slate-800/60 text-xs">
+              <td class="py-2">${item.name}</td>
+              <td class="py-2 text-center">${item.qty}</td>
+              <td class="py-2 text-right">₹${Number(item.rate).toLocaleString('en-IN')}</td>
+              <td class="py-2 text-right font-semibold">₹${(raw + gstAmt).toLocaleString('en-IN')}</td>
+            </tr>
+          `;
+        }).join("");
+
+        const grand = Math.max(0, sub + tax - Number(q.discount || 0));
+
+        const card = document.createElement("div");
+        card.className = "glass m3-card p-5 border border-slate-800 space-y-4";
+        card.innerHTML = `
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">FINALIZED QUOTATION</span>
+              <h4 class="font-extrabold text-base mt-1">${q.quoteNumber} — ${q.title}</h4>
+              <p class="text-xs text-slate-400">Valid Until: ${q.validUntil || 'N/A'}</p>
+            </div>
+            <div class="text-right">
+              <div class="text-xs text-slate-400">Grand Total</div>
+              <div class="text-xl font-extrabold text-emerald-400">₹${grand.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+            </div>
+          </div>
+
+          <table class="w-full text-left">
+            <thead>
+              <tr class="text-[10px] uppercase text-slate-400 border-b border-slate-800">
+                <th class="pb-1.5">Description</th>
+                <th class="pb-1.5 text-center">Qty</th>
+                <th class="pb-1.5 text-right">Rate</th>
+                <th class="pb-1.5 text-right">Total (incl. GST)</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+
+          <div class="text-xs text-slate-400 bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+            <strong>Terms & Notes:</strong> ${q.notes || 'Standard terms apply.'}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+  </script>
+</body>
+</html>
