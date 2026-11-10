@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Clock,
   Printer,
+  Download,
   Trash2,
   Edit3,
   X,
@@ -19,6 +20,7 @@ import {
   Navigation,
   UserCheck
 } from 'lucide-react';
+import { downloadHighQualityPdf } from '../utils/pdfGenerator';
 import type { DeliveryChallan, DeliveryItem, CustomerRecord, BusinessProfile, Quotation, Invoice } from '../types';
 
 interface DeliveryManagerProps {
@@ -110,9 +112,7 @@ export const DeliveryManager: React.FC<DeliveryManagerProps> = ({
       vehicleOrLrNumber: '',
       driverContact: '',
       status: 'PREPARING',
-      items: [
-        { name: 'Medical Grade Degreased Copper Pipe (28mm)', qtyDispatched: 50, unit: 'Meters', notes: 'EN 13348 Batch #8812' }
-      ]
+      items: []
     });
   };
 
@@ -166,7 +166,7 @@ export const DeliveryManager: React.FC<DeliveryManagerProps> = ({
   const handleQuickStatusChange = (challan: DeliveryChallan, nextStatus: DeliveryChallan['status']) => {
     let updateData: Partial<DeliveryChallan> = { id: challan.id, status: nextStatus };
     if (nextStatus === 'DELIVERED') {
-      const recipient = prompt('Enter name of receiving officer / store in-charge:', 'Hospital Biomed Head');
+      const recipient = prompt('Enter name of receiving officer / store in-charge:', 'Store In-Charge');
       if (recipient) {
         updateData.receivedBy = recipient;
         updateData.deliveredAt = new Date().toISOString();
@@ -501,7 +501,7 @@ export const DeliveryManager: React.FC<DeliveryManagerProps> = ({
                     required
                     value={editingChallan.customerName || ''}
                     onChange={(e) => setEditingChallan({ ...editingChallan, customerName: e.target.value })}
-                    placeholder="Hospital / Healthcare Institution"
+                    placeholder="Client / Organization Name"
                     className="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-sm"
                   />
                 </div>
@@ -524,7 +524,7 @@ export const DeliveryManager: React.FC<DeliveryManagerProps> = ({
                     type="text"
                     value={editingChallan.customerAddress || ''}
                     onChange={(e) => setEditingChallan({ ...editingChallan, customerAddress: e.target.value })}
-                    placeholder="Site installation address / Hospital MGPS Room"
+                    placeholder="Delivery site / destination address"
                     className="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-sm"
                   />
                 </div>
@@ -589,7 +589,7 @@ export const DeliveryManager: React.FC<DeliveryManagerProps> = ({
                         <input
                           type="text"
                           required
-                          placeholder="Item Description (e.g. Copper Pipe, Oxygen Flowmeter)"
+                          placeholder="Item / Material Description (e.g. Industrial Valves, Electronics, Hardware Units)"
                           value={item.name}
                           onChange={(e) => handleItemChange(index, 'name', e.target.value)}
                           className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-xs"
@@ -663,6 +663,12 @@ export const DeliveryManager: React.FC<DeliveryManagerProps> = ({
               <span className="text-sm font-semibold text-stone-500">Print Preview: GST Delivery Challan</span>
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => downloadHighQualityPdf('printableDeliveryDoc', `Delivery_Challan_${printingChallan.challanNumber}`)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-500 shadow-md transition"
+                >
+                  <Download className="w-4 h-4" /> Download PDF
+                </button>
+                <button
                   onClick={() => window.print()}
                   className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 text-white rounded-xl text-xs font-semibold hover:bg-stone-800"
                 >
@@ -678,7 +684,7 @@ export const DeliveryManager: React.FC<DeliveryManagerProps> = ({
             </div>
 
             {/* Official GST Rule 55 Delivery Challan Document */}
-            <div className="border border-stone-800 p-8 rounded-xl bg-white text-stone-900">
+            <div id="printableDeliveryDoc" className="border border-stone-800 p-8 rounded-xl bg-white text-stone-900">
               <div className="text-center pb-4 border-b-2 border-stone-800">
                 <h2 className="text-xl font-bold uppercase tracking-wider font-serif">DELIVERY CHALLAN</h2>
                 <p className="text-xs text-stone-600 mt-0.5">(Issued under Rule 55 of Central Goods and Services Tax Rules, 2017)</p>
@@ -688,15 +694,24 @@ export const DeliveryManager: React.FC<DeliveryManagerProps> = ({
               <div className="grid grid-cols-2 border-b border-stone-800 py-4 text-xs gap-4">
                 <div className="border-r border-stone-800 pr-4">
                   <h4 className="font-bold text-stone-900 uppercase">Consignor (Supplier):</h4>
-                  <p className="font-bold text-stone-900 text-sm mt-1">{businessProfile.name}</p>
-                  <p className="text-stone-700 whitespace-pre-line mt-0.5">{businessProfile.address}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {businessProfile.logoUrl ? (
+                      <img src={businessProfile.logoUrl} alt="Logo" className="w-9 h-9 object-contain rounded-lg border border-stone-200 p-0.5 bg-white" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
+                        {businessProfile.name?.charAt(0) || 'B'}
+                      </div>
+                    )}
+                    <p className="font-bold text-stone-900 text-sm">{businessProfile.name}</p>
+                  </div>
+                  <p className="text-stone-700 whitespace-pre-line mt-1">{businessProfile.address}</p>
                   <p className="mt-1 font-semibold">GSTIN: <span className="font-mono">{businessProfile.gstin}</span></p>
                   <p>Phone: {businessProfile.phone} | Email: {businessProfile.email}</p>
                 </div>
                 <div>
                   <h4 className="font-bold text-stone-900 uppercase">Consignee (Recipient):</h4>
                   <p className="font-bold text-stone-900 text-sm mt-1">{printingChallan.customerName}</p>
-                  <p className="text-stone-700 whitespace-pre-line mt-0.5">{printingChallan.customerAddress || 'Customer Hospital Site'}</p>
+                  <p className="text-stone-700 whitespace-pre-line mt-0.5">{printingChallan.customerAddress || 'Customer Destination Site'}</p>
                   <p className="mt-1 font-semibold">Contact: {printingChallan.customerPhone || 'N/A'}</p>
                 </div>
               </div>
@@ -739,7 +754,7 @@ export const DeliveryManager: React.FC<DeliveryManagerProps> = ({
                       <td className="py-2.5 px-3 font-semibold text-stone-900">{item.name}</td>
                       <td className="py-2.5 px-3 text-center font-bold text-stone-900">{item.qtyDispatched}</td>
                       <td className="py-2.5 px-3 text-center text-stone-700">{item.unit}</td>
-                      <td className="py-2.5 px-3 text-stone-500">{item.notes || 'Hospital MGPS compliant'}</td>
+                      <td className="py-2.5 px-3 text-stone-500">{item.notes || 'As per Purchase Order'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -747,7 +762,7 @@ export const DeliveryManager: React.FC<DeliveryManagerProps> = ({
 
               {/* Rule 55 Declarations */}
               <div className="mt-8 border-t border-stone-800 pt-4 text-[11px] text-stone-600">
-                <p className="font-semibold text-stone-800">Reason for Transportation: Supply of Medical Gas Pipeline Materials / Installation at Site.</p>
+                <p className="font-semibold text-stone-800">Reason for Transportation: Supply of Goods / Materials as per Confirmed Purchase Order.</p>
                 <p className="mt-0.5">We hereby certify that the goods mentioned above are being transported under Rule 55 of CGST Rules, 2017.</p>
               </div>
 

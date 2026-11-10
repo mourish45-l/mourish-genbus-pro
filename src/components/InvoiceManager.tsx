@@ -5,6 +5,7 @@ import {
   Receipt,
   Plus,
   Printer,
+  Download,
   Trash2,
   CheckCircle,
   Clock,
@@ -18,6 +19,7 @@ import {
   Eye,
   ArrowRight,
 } from 'lucide-react';
+import { downloadHighQualityPdf } from '../utils/pdfGenerator';
 
 interface Props {
   invoices: Record<string, Invoice>;
@@ -93,20 +95,11 @@ export const InvoiceManager: React.FC<Props> = ({
       issueDate: today,
       dueDate: due,
       status: 'DRAFT',
-      items: [
-        {
-          name: 'Medical Gas Copper Pipe 15mm (Medical Grade BS EN 13348)',
-          hsn: '7411',
-          qty: 20,
-          rate: 850,
-          gst: 18,
-          unit: 'Meters',
-        },
-      ],
+      items: [],
       discount: 0,
       paidAmount: 0,
-      notes: 'Thank you for choosing Life Gas System / Mourish Developers for your healthcare infrastructure.',
-      terms: 'Payment due within 15 days of invoice date via Bank NEFT / RTGS transfer. Interest @ 18% p.a. applicable for delayed payments.',
+      notes: 'Thank you for your business. Please remit payment via NEFT/RTGS to the official bank account detailed below.',
+      terms: 'Payment due within 15 days of invoice date via Bank NEFT / RTGS transfer. Interest applicable for delayed payments as per standard terms.',
       createdAt: Date.now(),
     };
 
@@ -131,7 +124,7 @@ export const InvoiceManager: React.FC<Props> = ({
     if (!activeInvoice) return;
     const items = [
       ...(activeInvoice.items || []),
-      { name: 'New Equipment / Gas Outlet Unit', hsn: '9019', qty: 1, rate: 1200, gst: 18, unit: 'Nos' },
+      { name: '', hsn: '', qty: 1, rate: 0, gst: 18, unit: 'Nos' },
     ];
     onSaveInvoice({ ...activeInvoice, items });
   };
@@ -335,6 +328,15 @@ export const InvoiceManager: React.FC<Props> = ({
                 </button>
 
                 <button
+                  onClick={() => downloadHighQualityPdf('printableInvoice', `Tax_Invoice_${activeInvoice.invoiceNumber}`)}
+                  className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition"
+                  title="Download High-Quality PDF"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download PDF</span>
+                </button>
+
+                <button
                   onClick={() => window.print()}
                   className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition"
                   title="Print GST Tax Invoice"
@@ -356,18 +358,29 @@ export const InvoiceManager: React.FC<Props> = ({
             {/* Print Header: Official Tax Invoice Format */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-slate-200 dark:border-slate-800 pb-6 text-xs">
               
-              {/* Supplier (Mourish Developers & Life Gas System) */}
-              <div className="space-y-1.5">
+              {/* Supplier with Logo */}
+              <div className="space-y-2">
                 <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Supplier Details</div>
-                <div className="text-base font-black text-slate-900 dark:text-white">{businessProfile.name}</div>
-                <div className="text-slate-600 dark:text-slate-400">GSTIN: <strong className="text-slate-900 dark:text-white">{businessProfile.gstin}</strong></div>
+                <div className="flex items-center gap-3">
+                  {businessProfile.logoUrl ? (
+                    <img src={businessProfile.logoUrl} alt="Logo" className="w-12 h-12 object-contain rounded-xl border border-slate-200 dark:border-slate-700 p-0.5 bg-white" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+                      {businessProfile.name?.charAt(0) || 'B'}
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-base font-black text-slate-900 dark:text-white">{businessProfile.name}</div>
+                    <div className="text-slate-600 dark:text-slate-400">GSTIN: <strong className="text-slate-900 dark:text-white font-mono">{businessProfile.gstin}</strong></div>
+                  </div>
+                </div>
                 <div className="text-slate-600 dark:text-slate-400">{businessProfile.address}</div>
                 <div className="text-slate-600 dark:text-slate-400">Phone: {businessProfile.phone} · Email: {businessProfile.email}</div>
               </div>
 
-              {/* Buyer / Hospital Details */}
+              {/* Buyer / Client Details */}
               <div className="space-y-2">
-                <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Billed To (Hospital / Client)</div>
+                <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Billed To (Client / Customer)</div>
                 <select
                   value={activeInvoice.customerId}
                   onChange={(e) => {
@@ -381,7 +394,7 @@ export const InvoiceManager: React.FC<Props> = ({
                   }}
                   className="w-full p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
                 >
-                  <option value="">Select Hospital / Client...</option>
+                  <option value="">Select Client Account...</option>
                   {Object.values(customers).map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name} ({c.company || c.phone})

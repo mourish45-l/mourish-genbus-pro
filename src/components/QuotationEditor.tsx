@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import type { Quotation, CustomerRecord, CatalogueItem } from '../types';
+import type { Quotation, CustomerRecord, CatalogueItem, BusinessProfile } from '../types';
 import {
   Plus,
   Printer,
+  Download,
   Trash2,
   CheckCircle,
   CheckCircle2,
@@ -12,6 +13,7 @@ import {
   Receipt,
   FileCheck,
 } from 'lucide-react';
+import { downloadHighQualityPdf } from '../utils/pdfGenerator';
 
 interface Props {
   quotations: Record<string, Quotation>;
@@ -27,6 +29,7 @@ interface Props {
   customers: Record<string, CustomerRecord>;
   catalogue: Record<string, CatalogueItem>;
   editorName: string;
+  businessProfile?: BusinessProfile;
 }
 
 export const QuotationEditor: React.FC<Props> = ({
@@ -43,6 +46,7 @@ export const QuotationEditor: React.FC<Props> = ({
   customers,
   catalogue,
   editorName,
+  businessProfile,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCatId, setSelectedCatId] = useState<string>('');
@@ -307,9 +311,18 @@ export const QuotationEditor: React.FC<Props> = ({
               </button>
 
               <button
+                onClick={() => downloadHighQualityPdf('printableQuotation', `Quotation_${activeQuote.quoteNumber}`)}
+                className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition"
+                title="Download High-Quality PDF"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download PDF</span>
+              </button>
+
+              <button
                 onClick={() => window.print()}
                 className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition"
-                title="Print or Export PDF"
+                title="Print Document"
               >
                 <Printer className="w-4 h-4" />
               </button>
@@ -323,6 +336,29 @@ export const QuotationEditor: React.FC<Props> = ({
               </button>
             </div>
           </div>
+
+          {/* Business Profile & Logo Banner on Estimate */}
+          {businessProfile && (
+            <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800/80">
+              {businessProfile.logoUrl ? (
+                <img
+                  src={businessProfile.logoUrl}
+                  alt="Company Logo"
+                  className="w-11 h-11 object-contain rounded-xl border border-slate-200 dark:border-slate-700 p-0.5 bg-white shadow-sm"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                  {businessProfile.name?.charAt(0) || 'B'}
+                </div>
+              )}
+              <div>
+                <div className="font-extrabold text-sm text-slate-900 dark:text-white">{businessProfile.name}</div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                  GSTIN: {businessProfile.gstin || 'Registered'} · {businessProfile.phone}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Quotation Meta Fields */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -357,7 +393,7 @@ export const QuotationEditor: React.FC<Props> = ({
                 type="text"
                 value={activeQuote.title || ''}
                 onChange={(e) => onSaveQuoteField(activeQuote.id, 'title', e.target.value)}
-                placeholder="e.g. Turnkey Medical Gas Pipeline System"
+                placeholder="e.g. Annual Commercial Supply Contract / Systems Integration"
                 className="w-full mt-1 px-3 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs focus:border-indigo-500 focus:outline-none text-slate-900 dark:text-white"
               />
             </div>

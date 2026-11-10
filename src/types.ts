@@ -3,9 +3,21 @@
  * Zoho-style ERP, CRM, Books (Invoicing & Estimates), Inventory & Projects Architecture
  */
 
+export type BusinessConstitution =
+  | 'Proprietorship'
+  | 'Partnership'
+  | 'LLP'
+  | 'Private Limited'
+  | 'Public Limited'
+  | 'One Person Company'
+  | 'Trust / Society'
+  | 'Enterprise';
+
 export interface BusinessProfile {
   bizId: string;
   name: string;
+  constitution?: BusinessConstitution | string; // e.g. 'Proprietorship', 'Private Limited'
+  businessTypes?: string[]; // Multiple business sectors/types allowed (e.g. ['Retail', 'Manufacturing', 'Services'])
   gstin: string;
   phone: string;
   email: string;
@@ -19,7 +31,10 @@ export interface BusinessProfile {
   signatoryName: string;
   signatoryTitle: string;
   lastEditedBy?: string;
-  logoUrl?: string;
+  logoUrl?: string; // Uploaded custom company logo (Base64 data URL)
+  division?: string;
+  createdAt?: number;
+  createdBy?: string;
 }
 
 export interface CatalogueItem {
@@ -28,10 +43,10 @@ export interface CatalogueItem {
   category: string;
   sku: string;
   hsn: string;
-  unit: string; // 'Nos' | 'Meters' | 'Sets' | 'Lots' | 'Cylinders' | 'Kits'
+  unit: string; // 'Nos' | 'Meters' | 'Sets' | 'Lots' | 'Kits' | 'Units'
   rate: number; // Selling Price (excl. GST)
   purchaseCost: number; // Cost Price
-  gst: number; // GST Rate (e.g. 18, 12, 5)
+  gst: number; // GST Rate (e.g. 18, 12, 5, 0)
   stockQuantity: number;
   reorderLevel: number;
   updatedBy?: string;
@@ -52,15 +67,14 @@ export interface StockAdjustment {
 export interface CustomerRecord {
   id: string;
   bizId: string;
-  name: string; // Hospital / Entity name
+  name: string; // Client / Organization / Entity name
   contactPerson: string;
   phone: string;
   email: string;
   company: string;
   gstin?: string;
   address?: string;
-  bedCapacity?: number;
-  department?: string; // e.g. 'MGPS Infrastructure', 'ICU / OT', 'Procurement'
+  department?: string; // e.g. 'Procurement', 'Operations', 'Finance', 'Billing'
   updatedBy?: string;
   createdAt?: number;
 }
@@ -123,7 +137,7 @@ export interface Invoice {
 export interface Deal {
   id: string;
   bizId: string;
-  title: string; // e.g. "Apollo Hospital 150-Bed MGPS Setup"
+  title: string; // e.g. "Commercial Supply Contract 2026"
   customerId: string;
   customerName: string;
   value: number; // Deal value in INR
@@ -145,10 +159,10 @@ export interface ProjectMilestone {
 export interface Project {
   id: string;
   bizId: string;
-  name: string; // e.g. "City Care Hospital Modular OT & Gas Pipeline"
+  name: string; // e.g. "Enterprise ERP Deployment & Systems Integration"
   customerId: string;
   customerName: string;
-  scope: string; // e.g. "Manifold Room, 4 OT Pendants, 120 Bed Head Units"
+  scope: string; // e.g. "Requirements Gathering, Hardware Delivery & Rollout"
   startDate: string;
   targetDate: string;
   status: 'PLANNING' | 'EXECUTION' | 'PRESSURE_TESTING' | 'COMMISSIONED';

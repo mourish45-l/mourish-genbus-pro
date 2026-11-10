@@ -1,6 +1,6 @@
 {
   "name": "Mourish GenBus MD3 Quotation & CRM Suite",
-  "description": "Enterprise Production ERP & CRM Suite: Estimates, GST Tax Invoices, Material Dispatches & Delivery Challans, CRM Deals Pipeline, Indian Hospital Turnkey Projects, and SHA-256 Cryptographic Chat.",
+  "description": "Enterprise Production ERP & CRM Suite: Estimates, GST Tax Invoices, Material Dispatches & Delivery Challans, Multi-Business Management, and Customer Self-Service Portal.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
