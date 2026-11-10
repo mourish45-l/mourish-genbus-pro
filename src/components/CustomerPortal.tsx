@@ -95,40 +95,40 @@ export const CustomerPortal: React.FC<Props> = ({
     {
       bizId: businessProfile.bizId || 'mourish_developers_hq',
       name: businessProfile.name || 'Mourish Developers & Life Gas System',
-      division: 'Hospital MGPS, Modular OT & Turnkey Healthcare Engineering',
+      division: 'Business Services & Project Delivery',
       gstin: businessProfile.gstin || '33CQLPT6813M1Z7',
       phone: businessProfile.phone || '9659233313 / 9487410078',
-      address: businessProfile.address || 'Medical Gas Pipeline (MGPS), Modular OT, Hospital Fire Safety & Digital Solutions, Tamil Nadu, India',
+      address: businessProfile.address || 'Tamil Nadu, India',
       bankName: businessProfile.bankName || 'HDFC Bank',
       bankAccountNo: businessProfile.bankAccountNo || '50200084920193',
       bankIfsc: businessProfile.bankIfsc || 'HDFC0001824',
       bankBranch: businessProfile.bankBranch || 'Commercial Branch, Tamil Nadu',
       signatoryName: businessProfile.signatoryName || 'Mourish Nithin',
       signatoryTitle: businessProfile.signatoryTitle || 'Managing Director',
-      logoIcon: 'bx-plus-medical'
+      logoIcon: 'bx-buildings'
     },
     {
       bizId: 'lifegas_healthcare_services',
       name: 'Life Gas Healthcare Infrastructure',
-      division: 'Cryogenic Liquid Oxygen, Gas Manifolds & PSA Plants',
+      division: 'Industrial Gas & Infrastructure Services',
       gstin: '33AABCL9921D1ZY',
       phone: '9659233313',
-      address: 'Industrial Gas & Healthcare Infrastructure Division, Tamil Nadu',
+      address: 'Tamil Nadu, India',
       bankName: 'HDFC Bank',
       bankAccountNo: '50200084920193',
       bankIfsc: 'HDFC0001824',
       bankBranch: 'Commercial Branch, Tamil Nadu',
       signatoryName: 'Mourish Nithin',
       signatoryTitle: 'Lead Engineer',
-      logoIcon: 'bx-shield-plus'
+      logoIcon: 'bx-buildings'
     },
     {
       bizId: 'mourish_digital_labs',
       name: 'Mourish Digital & Tech Labs',
-      division: 'Hospital Telemetry, Gas Alarm Monitoring & Cloud ERP',
+      division: 'Software, Technology & Digital Services',
       gstin: '33CQLPT6813M1Z7',
       phone: '9487410078',
-      address: 'Cloud Healthcare Automation & Sensor Telemetry Labs, Tamil Nadu',
+      address: 'Tamil Nadu, India',
       bankName: 'HDFC Bank',
       bankAccountNo: '50200084920193',
       bankIfsc: 'HDFC0001824',
@@ -181,7 +181,7 @@ export const CustomerPortal: React.FC<Props> = ({
     if (e) e.preventDefault();
     const clean = cleanPhone(phoneNumberInput);
     if (!clean || clean.length < 4) {
-      alert('Please enter a valid phone number (at least 4 digits, e.g. 9659233313)');
+      alert('Please enter a valid phone number (at least 4 digits).');
       return;
     }
     setSearchedPhone(phoneNumberInput.trim());
@@ -214,7 +214,7 @@ export const CustomerPortal: React.FC<Props> = ({
 
   const handleConfirmApproval = (quoteId: string) => {
     if (!onApproveQuote) return;
-    onApproveQuote(quoteId, signatoryInput.trim() || matchedCustomer?.name || 'Authorized Hospital Officer');
+    onApproveQuote(quoteId, signatoryInput.trim() || matchedCustomer?.name || 'Authorized Representative');
     setApprovingQuoteId(null);
     setSignatoryInput('');
   };
@@ -238,7 +238,7 @@ export const CustomerPortal: React.FC<Props> = ({
               </span>
             </div>
             <p className="text-xs text-teal-100 mt-0.5">
-              Receive live push alerts on Quotation Approvals, GST Invoices, and Delivery Transit Milestones.
+              Receive live push alerts on quote approvals, invoices, and delivery updates.
             </p>
           </div>
         </div>
@@ -266,13 +266,13 @@ export const CustomerPortal: React.FC<Props> = ({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-500/10 text-teal-700 border border-teal-500/20">
-              Hospital & Healthcare Client Self-Service Portal
+              Client Self-Service Portal
             </span>
             <h2 className="text-2xl font-bold text-stone-900 font-serif mt-2">
-              Enter Your Phone Number to Access Your Business Orders
+              Enter Your Phone Number to View Your Orders
             </h2>
             <p className="text-xs text-stone-500 mt-1 max-w-2xl">
-              Enter your registered contact number to discover all active business entities within Mourish GenBus that have finalized quotations, tax invoices, and live dispatches for your facility.
+              Enter your registered phone number to find your quotes, invoices, and delivery updates from Mourish GenBus.
             </p>
           </div>
 
@@ -283,15 +283,15 @@ export const CustomerPortal: React.FC<Props> = ({
                 type="tel"
                 value={phoneNumberInput}
                 onChange={(e) => setPhoneNumberInput(e.target.value)}
-                placeholder="e.g. 9659233313"
-                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-stone-50 border border-stone-300 text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:bg-white transition-all font-mono"
+                placeholder="Enter your phone number"
+                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-stone-50 border border-stone-300 text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:bg-white transition-all"
               />
             </div>
             <button
               type="submit"
               className="px-6 py-3 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-sm font-bold shadow-md shadow-teal-700/20 transition-all flex items-center gap-1.5 shrink-0"
             >
-              <span>Discover</span>
+              <span>Find Orders</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
@@ -304,12 +304,12 @@ export const CustomerPortal: React.FC<Props> = ({
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-base font-bold text-stone-900 font-serif">
-                Available Businesses Using Phone Number: <span className="font-mono text-teal-700">{searchedPhone}</span>
+                Businesses linked to: <span className="font-mono text-teal-700">{searchedPhone}</span>
               </h3>
               <p className="text-xs text-stone-500">
                 {matchedCustomer
-                  ? `Identified Customer: ${matchedCustomer.name} (${matchedCustomer.company || 'Healthcare Client'})`
-                  : 'Select a business division to review documents, dispatches, and open chat'}
+                  ? `Customer: ${matchedCustomer.name} (${matchedCustomer.company || 'Business Client'})`
+                  : 'Choose a business to view available documents, deliveries, and messages.'}
               </p>
             </div>
 
@@ -355,15 +355,14 @@ export const CustomerPortal: React.FC<Props> = ({
                     <p className="text-xs text-stone-500 mt-1 line-clamp-2">{biz.division}</p>
 
                     <div className="mt-3 pt-3 border-t border-stone-100 text-[11px] text-stone-600 space-y-0.5">
-                      <div>GSTIN: <span className="font-mono font-semibold">{biz.gstin}</span></div>
+                      <div>Tax ID: <span className="font-mono font-semibold">{biz.gstin}</span></div>
                       <div>Contact: <span className="font-mono">{biz.phone}</span></div>
                     </div>
                   </div>
 
-                  {/* Badges for records */}
                   <div className="mt-4 pt-3 border-t border-stone-100 flex items-center gap-1.5 flex-wrap">
                     <span className="px-2 py-0.5 rounded-lg bg-teal-50 text-teal-800 text-[11px] font-semibold border border-teal-200">
-                      {stats.quotesCount} Finalized Quotes
+                      {stats.quotesCount} Quotes
                     </span>
                     <span className="px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-800 text-[11px] font-semibold border border-indigo-200">
                       {stats.invoicesCount} Invoices
@@ -382,8 +381,6 @@ export const CustomerPortal: React.FC<Props> = ({
       {/* Step 3: Selected Business Customer Dashboard */}
       {selectedBiz && searchedPhone && (
         <div className="space-y-6">
-
-          {/* Navigation Tabs for Selected Business */}
           <div className="bg-white/90 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-stone-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-2xl bg-teal-600 text-white flex items-center justify-center font-bold shadow-md shadow-teal-600/20">
@@ -397,39 +394,26 @@ export const CustomerPortal: React.FC<Props> = ({
               </div>
             </div>
 
-            {/* 4 Tabs: Quotes, Invoices, Deliveries, Chat */}
             <div className="flex items-center gap-1 bg-stone-100 p-1.5 rounded-2xl text-xs font-bold overflow-x-auto w-full sm:w-auto">
               <button
                 onClick={() => setActivePortalTab('quotes')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
-                  activePortalTab === 'quotes'
-                    ? 'bg-teal-700 text-white shadow-sm'
-                    : 'text-stone-600 hover:text-stone-900'
-                }`}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all whitespace-nowrap ${activePortalTab === 'quotes' ? 'bg-teal-700 text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'}`}
               >
                 <FileText className="w-4 h-4" />
-                <span>Finalized Quotes ({customerQuotes.length})</span>
+                <span>Quotes ({customerQuotes.length})</span>
               </button>
 
               <button
                 onClick={() => setActivePortalTab('invoices')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
-                  activePortalTab === 'invoices'
-                    ? 'bg-teal-700 text-white shadow-sm'
-                    : 'text-stone-600 hover:text-stone-900'
-                }`}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all whitespace-nowrap ${activePortalTab === 'invoices' ? 'bg-teal-700 text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'}`}
               >
                 <Receipt className="w-4 h-4" />
-                <span>Tax Invoices ({customerInvoices.length})</span>
+                <span>Invoices ({customerInvoices.length})</span>
               </button>
 
               <button
                 onClick={() => setActivePortalTab('deliveries')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
-                  activePortalTab === 'deliveries'
-                    ? 'bg-teal-700 text-white shadow-sm'
-                    : 'text-stone-600 hover:text-stone-900'
-                }`}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all whitespace-nowrap ${activePortalTab === 'deliveries' ? 'bg-teal-700 text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'}`}
               >
                 <Truck className="w-4 h-4" />
                 <span>Deliveries ({customerDeliveries.length})</span>
@@ -437,27 +421,22 @@ export const CustomerPortal: React.FC<Props> = ({
 
               <button
                 onClick={() => setActivePortalTab('chat')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
-                  activePortalTab === 'chat'
-                    ? 'bg-teal-700 text-white shadow-sm'
-                    : 'text-stone-600 hover:text-stone-900'
-                }`}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all whitespace-nowrap ${activePortalTab === 'chat' ? 'bg-teal-700 text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'}`}
               >
                 <MessageSquare className="w-4 h-4" />
-                <span>SHA-256 Chat</span>
+                <span>Messages</span>
               </button>
             </div>
           </div>
 
-          {/* TAB 1: FINALIZED QUOTATIONS */}
           {activePortalTab === 'quotes' && (
             <div className="space-y-4">
               {customerQuotes.length === 0 ? (
                 <div className="p-12 text-center bg-white/70 rounded-3xl border border-dashed border-stone-300">
                   <FileText className="w-12 h-12 text-stone-400 mx-auto mb-3 opacity-60" />
-                  <h4 className="text-sm font-semibold text-stone-800">No Finalized Quotations Found</h4>
+                  <h4 className="text-sm font-semibold text-stone-800">No Finalized Quotes Found</h4>
                   <p className="text-xs text-stone-500 mt-1 max-w-md mx-auto">
-                    There are no finalized proposals currently published for this customer record. Please reach out to our engineering desk via the Chat tab for a tailored hospital quote.
+                    There are no finalized quotes available for this customer. Contact the business through the Messages tab for assistance.
                   </p>
                 </div>
               ) : (
@@ -472,20 +451,15 @@ export const CustomerPortal: React.FC<Props> = ({
                   const grand = Math.max(0, sub + tax - Number(q.discount || 0));
 
                   return (
-                    <div
-                      key={q.id}
-                      className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm space-y-4"
-                    >
+                    <div key={q.id} className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm space-y-4">
                       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-100 pb-3">
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-mono font-bold text-base text-stone-900">{q.quoteNumber}</span>
-                            <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
-                              FINALIZED PROPOSAL
-                            </span>
+                            <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">FINALIZED QUOTE</span>
                             {q.customerApproved && (
                               <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-700 text-white flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3" /> Approved by {q.customerSignatory || 'Hospital'}
+                                <CheckCircle2 className="w-3 h-3" /> Approved by {q.customerSignatory || 'Client'}
                               </span>
                             )}
                           </div>
@@ -495,13 +469,10 @@ export const CustomerPortal: React.FC<Props> = ({
 
                         <div className="text-right">
                           <span className="text-xs text-stone-500 block">Total Payable (incl. GST)</span>
-                          <span className="text-2xl font-black text-teal-700 font-mono block">
-                            {formatINR(grand)}
-                          </span>
+                          <span className="text-2xl font-black text-teal-700 font-mono block">{formatINR(grand)}</span>
                         </div>
                       </div>
 
-                      {/* Items table */}
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs">
                           <thead>
@@ -525,9 +496,7 @@ export const CustomerPortal: React.FC<Props> = ({
                                   <td className="py-2.5 px-3 text-center font-bold text-stone-800">{item.qty} {item.unit || 'Nos'}</td>
                                   <td className="py-2.5 px-3 text-right font-mono">{formatINR(item.rate)}</td>
                                   <td className="py-2.5 px-3 text-right font-mono text-stone-600">{item.gst}%</td>
-                                  <td className="py-2.5 px-3 text-right font-mono font-bold text-stone-900">
-                                    {formatINR(lineRaw + lineTax)}
-                                  </td>
+                                  <td className="py-2.5 px-3 text-right font-mono font-bold text-stone-900">{formatINR(lineRaw + lineTax)}</td>
                                 </tr>
                               );
                             })}
@@ -542,10 +511,7 @@ export const CustomerPortal: React.FC<Props> = ({
                       )}
 
                       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                        <button
-                          onClick={() => window.print()}
-                          className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-semibold text-stone-700 flex items-center gap-1.5"
-                        >
+                        <button onClick={() => window.print()} className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-semibold text-stone-700 flex items-center gap-1.5">
                           <Printer className="w-4 h-4" /> Print / Save PDF
                         </button>
 
@@ -553,35 +519,15 @@ export const CustomerPortal: React.FC<Props> = ({
                           <div className="flex items-center gap-2">
                             {approvingQuoteId === q.id ? (
                               <div className="flex items-center gap-2">
-                                <input
-                                  type="text"
-                                  value={signatoryInput}
-                                  onChange={(e) => setSignatoryInput(e.target.value)}
-                                  placeholder="Signatory Name (e.g. Dr. Rajesh / Biomed Head)"
-                                  className="px-3 py-1.5 rounded-xl bg-stone-50 border border-stone-200 text-xs"
-                                />
-                                <button
-                                  onClick={() => handleConfirmApproval(q.id)}
-                                  className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center gap-1 shadow-sm"
-                                >
-                                  <CheckCircle2 className="w-4 h-4" /> Confirm Sign-Off
+                                <input type="text" value={signatoryInput} onChange={(e) => setSignatoryInput(e.target.value)} placeholder="Authorized representative name" className="px-3 py-1.5 rounded-xl bg-stone-50 border border-stone-200 text-xs" />
+                                <button onClick={() => handleConfirmApproval(q.id)} className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center gap-1 shadow-sm">
+                                  <CheckCircle2 className="w-4 h-4" /> Confirm Approval
                                 </button>
-                                <button
-                                  onClick={() => setApprovingQuoteId(null)}
-                                  className="text-xs text-stone-400 hover:text-stone-700"
-                                >
-                                  Cancel
-                                </button>
+                                <button onClick={() => setApprovingQuoteId(null)} className="text-xs text-stone-400 hover:text-stone-700">Cancel</button>
                               </div>
                             ) : (
-                              <button
-                                onClick={() => {
-                                  setApprovingQuoteId(q.id);
-                                  setSignatoryInput(matchedCustomer?.name || 'Hospital Authority');
-                                }}
-                                className="px-5 py-2.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-700/20"
-                              >
-                                <CheckCircle2 className="w-4 h-4" /> Approve Proposal Online
+                              <button onClick={() => { setApprovingQuoteId(q.id); setSignatoryInput(matchedCustomer?.name || ''); }} className="px-5 py-2.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-700/20">
+                                <CheckCircle2 className="w-4 h-4" /> Approve Quote Online
                               </button>
                             )}
                           </div>
@@ -594,35 +540,19 @@ export const CustomerPortal: React.FC<Props> = ({
             </div>
           )}
 
-          {/* TAB 2: TAX INVOICES & OFFICIAL BANK NEFT */}
           {activePortalTab === 'invoices' && (
             <div className="space-y-4">
-              {/* Official Bank Remittance Details (Zero UPI) */}
               <div className="p-5 rounded-3xl bg-indigo-50/70 border border-indigo-200 text-xs text-indigo-950 space-y-2">
                 <div className="flex items-center gap-2 text-indigo-900 font-bold uppercase tracking-wider text-[11px]">
                   <Building2 className="w-4 h-4 text-indigo-700" />
-                  <span>Official Enterprise Bank NEFT / RTGS Remittance Account</span>
+                  <span>Business Bank Transfer Details</span>
                 </div>
-                <p className="text-stone-600 text-xs">
-                  Remit invoice payments directly through institutional RTGS/NEFT to our verified corporate bank account:
-                </p>
+                <p className="text-stone-600 text-xs">Use the bank details below to pay invoices by bank transfer:</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white p-3.5 rounded-2xl border border-indigo-100 font-medium">
-                  <div>
-                    <span className="text-stone-400 block text-[10px] uppercase font-bold">Bank Name</span>
-                    <strong className="text-stone-900 text-xs">{selectedBiz.bankName}</strong>
-                  </div>
-                  <div>
-                    <span className="text-stone-400 block text-[10px] uppercase font-bold">Account Number</span>
-                    <strong className="text-stone-900 font-mono text-xs">{selectedBiz.bankAccountNo}</strong>
-                  </div>
-                  <div>
-                    <span className="text-stone-400 block text-[10px] uppercase font-bold">IFSC Code</span>
-                    <strong className="text-stone-900 font-mono text-xs">{selectedBiz.bankIfsc}</strong>
-                  </div>
-                  <div>
-                    <span className="text-stone-400 block text-[10px] uppercase font-bold">Branch</span>
-                    <strong className="text-stone-900 text-xs">{selectedBiz.bankBranch}</strong>
-                  </div>
+                  <div><span className="text-stone-400 block text-[10px] uppercase font-bold">Bank Name</span><strong className="text-stone-900 text-xs">{selectedBiz.bankName}</strong></div>
+                  <div><span className="text-stone-400 block text-[10px] uppercase font-bold">Account Number</span><strong className="text-stone-900 font-mono text-xs">{selectedBiz.bankAccountNo}</strong></div>
+                  <div><span className="text-stone-400 block text-[10px] uppercase font-bold">IFSC Code</span><strong className="text-stone-900 font-mono text-xs">{selectedBiz.bankIfsc}</strong></div>
+                  <div><span className="text-stone-400 block text-[10px] uppercase font-bold">Branch</span><strong className="text-stone-900 text-xs">{selectedBiz.bankBranch}</strong></div>
                 </div>
               </div>
 
@@ -630,9 +560,7 @@ export const CustomerPortal: React.FC<Props> = ({
                 <div className="p-12 text-center bg-white/70 rounded-3xl border border-dashed border-stone-300">
                   <Receipt className="w-12 h-12 text-stone-400 mx-auto mb-3 opacity-60" />
                   <h4 className="text-sm font-semibold text-stone-800">No Invoices Issued</h4>
-                  <p className="text-xs text-stone-500 mt-1 max-w-md mx-auto">
-                    No tax invoices have been generated for your hospital account under this business division.
-                  </p>
+                  <p className="text-xs text-stone-500 mt-1 max-w-md mx-auto">No tax invoices have been generated for this customer.</p>
                 </div>
               ) : (
                 customerInvoices.map((inv) => {
@@ -648,62 +576,33 @@ export const CustomerPortal: React.FC<Props> = ({
                   const bal = Math.max(0, grand - paid);
 
                   return (
-                    <div
-                      key={inv.id}
-                      className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm space-y-4"
-                    >
+                    <div key={inv.id} className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm space-y-4">
                       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-100 pb-3">
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-mono font-bold text-base text-stone-900">{inv.invoiceNumber}</span>
-                            <span
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold border ${
-                                inv.status === 'PAID'
-                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                                  : inv.status === 'PARTIAL'
-                                  ? 'bg-blue-50 text-blue-800 border-blue-200'
-                                  : 'bg-amber-50 text-amber-800 border-amber-200'
-                              }`}
-                            >
-                              {inv.status}
-                            </span>
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold border ${inv.status === 'PAID' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : inv.status === 'PARTIAL' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-amber-50 text-amber-800 border-amber-200'}`}>{inv.status}</span>
                           </div>
-                          <p className="text-xs text-stone-400 mt-0.5">
-                            Issue Date: {inv.issueDate} · Due Date: {inv.dueDate}
-                          </p>
+                          <p className="text-xs text-stone-400 mt-0.5">Issue Date: {inv.issueDate} · Due Date: {inv.dueDate}</p>
                         </div>
-
                         <div className="text-right">
                           <span className="text-xs text-stone-500 block">Balance Due</span>
-                          <span className="text-2xl font-black text-rose-600 font-mono block">
-                            {formatINR(bal)}
-                          </span>
+                          <span className="text-2xl font-black text-rose-600 font-mono block">{formatINR(bal)}</span>
                         </div>
                       </div>
 
                       <div className="space-y-1.5 text-xs">
                         {(inv.items || []).map((it, idx) => (
                           <div key={idx} className="flex justify-between py-1 border-b border-stone-50">
-                            <span className="text-stone-700 font-medium">
-                              {it.qty}x {it.name}
-                            </span>
-                            <span className="font-mono font-bold text-stone-900">
-                              {formatINR((Number(it.qty) || 0) * (Number(it.rate) || 0))}
-                            </span>
+                            <span className="text-stone-700 font-medium">{it.qty}x {it.name}</span>
+                            <span className="font-mono font-bold text-stone-900">{formatINR((Number(it.qty) || 0) * (Number(it.rate) || 0))}</span>
                           </div>
                         ))}
                       </div>
 
                       <div className="flex items-center justify-between pt-3 border-t border-stone-100">
-                        <button
-                          onClick={() => window.print()}
-                          className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-semibold text-stone-700 flex items-center gap-1.5"
-                        >
-                          <Printer className="w-4 h-4" /> Print Tax Invoice
-                        </button>
-                        <div className="text-xs text-stone-500">
-                          Invoice Total: <strong className="text-stone-900">{formatINR(grand)}</strong> (Paid: {formatINR(paid)})
-                        </div>
+                        <button onClick={() => window.print()} className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-semibold text-stone-700 flex items-center gap-1.5"><Printer className="w-4 h-4" /> Print Invoice</button>
+                        <div className="text-xs text-stone-500">Invoice Total: <strong className="text-stone-900">{formatINR(grand)}</strong> (Paid: {formatINR(paid)})</div>
                       </div>
                     </div>
                   );
@@ -712,16 +611,13 @@ export const CustomerPortal: React.FC<Props> = ({
             </div>
           )}
 
-          {/* TAB 3: DELIVERIES & DISPATCH TRACKING */}
           {activePortalTab === 'deliveries' && (
             <div className="space-y-4">
               {customerDeliveries.length === 0 ? (
                 <div className="p-12 text-center bg-white/70 rounded-3xl border border-dashed border-stone-300">
                   <Truck className="w-12 h-12 text-stone-400 mx-auto mb-3 opacity-60" />
-                  <h4 className="text-sm font-semibold text-stone-800">No Dispatches Scheduled</h4>
-                  <p className="text-xs text-stone-500 mt-1 max-w-md mx-auto">
-                    There are no material dispatches currently registered under your phone number. Once items are packed, you will be able to track live logistics here.
-                  </p>
+                  <h4 className="text-sm font-semibold text-stone-800">No Deliveries Scheduled</h4>
+                  <p className="text-xs text-stone-500 mt-1 max-w-md mx-auto">There are no deliveries registered for this phone number. Delivery updates will appear here when available.</p>
                 </div>
               ) : (
                 customerDeliveries.map((d) => {
@@ -729,30 +625,21 @@ export const CustomerPortal: React.FC<Props> = ({
                   const currentIdx = stages.indexOf(d.status);
 
                   return (
-                    <div
-                      key={d.id}
-                      className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm space-y-5"
-                    >
+                    <div key={d.id} className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm space-y-5">
                       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-100 pb-3">
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-mono font-bold text-base text-stone-900">{d.challanNumber}</span>
-                            <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
-                              GST Delivery Challan (Rule 55)
-                            </span>
+                            <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">Delivery Challan</span>
                           </div>
-                          <p className="text-xs text-stone-500 mt-0.5">
-                            Transporter: <strong className="text-stone-800">{d.carrierName || 'Direct dedicated vehicle'}</strong> · LR/Waybill: <span className="font-mono font-bold text-stone-900">{d.vehicleOrLrNumber || 'Local Delivery'}</span>
-                          </p>
+                          <p className="text-xs text-stone-500 mt-0.5">Carrier: <strong className="text-stone-800">{d.carrierName || 'Direct delivery'}</strong> · Reference: <span className="font-mono font-bold text-stone-900">{d.vehicleOrLrNumber || 'N/A'}</span></p>
                         </div>
-
                         <div className="text-right">
                           <span className="text-xs text-stone-400 block">Est. Delivery</span>
                           <span className="text-sm font-bold text-stone-900 block">{d.expectedDeliveryDate || 'Prompt'}</span>
                         </div>
                       </div>
 
-                      {/* Visual Timeline Stepper */}
                       <div className="bg-stone-50 p-4 rounded-2xl border border-stone-100">
                         <div className="grid grid-cols-4 gap-2 text-center relative">
                           {stages.map((stage, idx) => {
@@ -761,46 +648,23 @@ export const CustomerPortal: React.FC<Props> = ({
 
                             return (
                               <div key={stage} className="flex flex-col items-center">
-                                <div
-                                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mb-1.5 transition-all ${
-                                    isCurrent
-                                      ? 'bg-teal-700 text-white ring-4 ring-teal-100'
-                                      : isPassed
-                                      ? 'bg-emerald-600 text-white'
-                                      : 'bg-stone-200 text-stone-500'
-                                  }`}
-                                >
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mb-1.5 transition-all ${isCurrent ? 'bg-teal-700 text-white ring-4 ring-teal-100' : isPassed ? 'bg-emerald-600 text-white' : 'bg-stone-200 text-stone-500'}`}>
                                   {isPassed && !isCurrent ? '✓' : idx + 1}
                                 </div>
-                                <span
-                                  className={`text-[11px] font-bold tracking-tight capitalize ${
-                                    isCurrent
-                                      ? 'text-teal-900 font-extrabold'
-                                      : isPassed
-                                      ? 'text-stone-800'
-                                      : 'text-stone-400'
-                                  }`}
-                                >
-                                  {stage.replace('_', ' ').toLowerCase()}
-                                </span>
+                                <span className={`text-[11px] font-bold tracking-tight capitalize ${isCurrent ? 'text-teal-900 font-extrabold' : isPassed ? 'text-stone-800' : 'text-stone-400'}`}>{stage.replace('_', ' ').toLowerCase()}</span>
                               </div>
                             );
                           })}
                         </div>
                       </div>
 
-                      {/* Dispatched Items */}
                       <div>
-                        <h5 className="text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
-                          Material Dispatch Manifest
-                        </h5>
+                        <h5 className="text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">Delivery Items</h5>
                         <div className="divide-y divide-stone-100 border border-stone-100 rounded-2xl overflow-hidden bg-stone-50/50">
                           {(d.items || []).map((it, idx) => (
                             <div key={idx} className="p-3 flex items-center justify-between text-xs">
                               <span className="font-semibold text-stone-900">{it.name}</span>
-                              <span className="font-bold text-stone-800 font-mono">
-                                {it.qtyDispatched} {it.unit}
-                              </span>
+                              <span className="font-bold text-stone-800 font-mono">{it.qtyDispatched} {it.unit}</span>
                             </div>
                           ))}
                         </div>
@@ -809,19 +673,12 @@ export const CustomerPortal: React.FC<Props> = ({
                       {d.receivedBy && (
                         <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <span>
-                            Delivered successfully and acknowledged by: <strong>{d.receivedBy}</strong>
-                          </span>
+                          <span>Delivered and acknowledged by: <strong>{d.receivedBy}</strong></span>
                         </div>
                       )}
 
                       <div className="flex items-center justify-between pt-2">
-                        <button
-                          onClick={() => setPrintingDelivery(d)}
-                          className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-semibold text-stone-700 flex items-center gap-1.5"
-                        >
-                          <Printer className="w-4 h-4" /> View & Print Delivery Challan
-                        </button>
+                        <button onClick={() => setPrintingDelivery(d)} className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-semibold text-stone-700 flex items-center gap-1.5"><Printer className="w-4 h-4" /> View & Print Delivery Note</button>
                         <span className="text-xs text-stone-400 font-mono">Dispatch Date: {d.dispatchDate}</span>
                       </div>
                     </div>
@@ -831,7 +688,6 @@ export const CustomerPortal: React.FC<Props> = ({
             </div>
           )}
 
-          {/* TAB 4: CRYPTOGRAPHIC SHA-256 SECURE CHAT */}
           {activePortalTab === 'chat' && (
             <div className="max-w-3xl mx-auto">
               <ChatHub
@@ -847,36 +703,24 @@ export const CustomerPortal: React.FC<Props> = ({
               />
             </div>
           )}
-
         </div>
       )}
 
-      {/* Printable Delivery Challan Modal for Customer */}
       {printingDelivery && (
         <div className="fixed inset-0 z-50 bg-stone-900/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-4xl w-full p-8 shadow-2xl border border-stone-200 my-6">
             <div className="flex items-center justify-between pb-4 border-b border-stone-200 mb-6 print:hidden">
-              <span className="text-sm font-semibold text-stone-500">Official GST Rule 55 Delivery Challan</span>
+              <span className="text-sm font-semibold text-stone-500">Delivery Note Preview</span>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => window.print()}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 text-white rounded-xl text-xs font-semibold hover:bg-stone-800"
-                >
-                  <Printer className="w-4 h-4" /> Print
-                </button>
-                <button
-                  onClick={() => setPrintingDelivery(null)}
-                  className="px-4 py-2 text-xs font-semibold text-stone-500 hover:text-stone-800"
-                >
-                  Close
-                </button>
+                <button onClick={() => window.print()} className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 text-white rounded-xl text-xs font-semibold hover:bg-stone-800"><Printer className="w-4 h-4" /> Print</button>
+                <button onClick={() => setPrintingDelivery(null)} className="px-4 py-2 text-xs font-semibold text-stone-500 hover:text-stone-800">Close</button>
               </div>
             </div>
 
             <div className="border border-stone-800 p-8 rounded-xl bg-white text-stone-900 text-xs">
               <div className="text-center pb-4 border-b-2 border-stone-800">
-                <h2 className="text-xl font-bold uppercase tracking-wider font-serif">DELIVERY CHALLAN</h2>
-                <p className="text-xs text-stone-600 mt-0.5">(Issued under Rule 55 of Central Goods and Services Tax Rules, 2017)</p>
+                <h2 className="text-xl font-bold uppercase tracking-wider font-serif">DELIVERY NOTE</h2>
+                <p className="text-xs text-stone-600 mt-0.5">Delivery record</p>
               </div>
 
               <div className="grid grid-cols-2 border-b border-stone-800 py-4 gap-4">
@@ -884,43 +728,31 @@ export const CustomerPortal: React.FC<Props> = ({
                   <h4 className="font-bold text-stone-900 uppercase">Supplier:</h4>
                   <p className="font-bold text-stone-900 text-sm mt-1">{selectedBiz?.name}</p>
                   <p className="text-stone-700 whitespace-pre-line mt-0.5">{selectedBiz?.address}</p>
-                  <p className="mt-1 font-semibold">GSTIN: <span className="font-mono">{selectedBiz?.gstin}</span></p>
+                  <p className="mt-1 font-semibold">Tax ID: <span className="font-mono">{selectedBiz?.gstin}</span></p>
                 </div>
                 <div>
-                  <h4 className="font-bold text-stone-900 uppercase">Customer / Consignee:</h4>
+                  <h4 className="font-bold text-stone-900 uppercase">Customer / Recipient:</h4>
                   <p className="font-bold text-stone-900 text-sm mt-1">{printingDelivery.customerName}</p>
-                  <p className="text-stone-700 whitespace-pre-line mt-0.5">{printingDelivery.customerAddress || 'Client Site'}</p>
+                  <p className="text-stone-700 whitespace-pre-line mt-0.5">{printingDelivery.customerAddress || 'Customer Site'}</p>
                   <p className="mt-1 font-semibold">Phone: {printingDelivery.customerPhone || searchedPhone}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-4 border-b border-stone-800 py-3 bg-stone-50 gap-2">
-                <div>
-                  <span className="text-stone-500 block">Challan No.:</span>
-                  <span className="font-bold font-mono text-stone-900">{printingDelivery.challanNumber}</span>
-                </div>
-                <div>
-                  <span className="text-stone-500 block">Dispatch Date:</span>
-                  <span className="font-bold text-stone-900">{printingDelivery.dispatchDate}</span>
-                </div>
-                <div>
-                  <span className="text-stone-500 block">Carrier:</span>
-                  <span className="font-bold text-stone-900">{printingDelivery.carrierName}</span>
-                </div>
-                <div>
-                  <span className="text-stone-500 block">Vehicle / LR:</span>
-                  <span className="font-bold font-mono text-stone-900">{printingDelivery.vehicleOrLrNumber || 'Local'}</span>
-                </div>
+                <div><span className="text-stone-500 block">Delivery Note No.:</span><span className="font-bold font-mono text-stone-900">{printingDelivery.challanNumber}</span></div>
+                <div><span className="text-stone-500 block">Dispatch Date:</span><span className="font-bold text-stone-900">{printingDelivery.dispatchDate}</span></div>
+                <div><span className="text-stone-500 block">Carrier:</span><span className="font-bold text-stone-900">{printingDelivery.carrierName}</span></div>
+                <div><span className="text-stone-500 block">Vehicle / Reference:</span><span className="font-bold font-mono text-stone-900">{printingDelivery.vehicleOrLrNumber || 'Local'}</span></div>
               </div>
 
               <table className="w-full text-xs mt-4 border-collapse">
                 <thead>
                   <tr className="border-b-2 border-stone-800 bg-stone-100 text-stone-800 font-bold">
                     <th className="py-2 px-3 text-left w-12">#</th>
-                    <th className="py-2 px-3 text-left">Description of Goods</th>
+                    <th className="py-2 px-3 text-left">Item Description</th>
                     <th className="py-2 px-3 text-center w-24">Quantity</th>
                     <th className="py-2 px-3 text-center w-20">Unit</th>
-                    <th className="py-2 px-3 text-left w-48">Remarks</th>
+                    <th className="py-2 px-3 text-left w-48">Notes</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-200">
@@ -930,31 +762,20 @@ export const CustomerPortal: React.FC<Props> = ({
                       <td className="py-2.5 px-3 font-semibold text-stone-900">{item.name}</td>
                       <td className="py-2.5 px-3 text-center font-bold text-stone-900">{item.qtyDispatched}</td>
                       <td className="py-2.5 px-3 text-center text-stone-700">{item.unit}</td>
-                      <td className="py-2.5 px-3 text-stone-500">{item.notes || 'Hospital MGPS Spec'}</td>
+                      <td className="py-2.5 px-3 text-stone-500">{item.notes || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
               <div className="grid grid-cols-2 pt-12 text-xs">
-                <div>
-                  <div className="border-t border-dashed border-stone-400 w-48 pt-2">
-                    <p className="font-bold text-stone-800">Receiver's Signature</p>
-                  </div>
-                </div>
-                <div className="text-right flex flex-col items-end">
-                  <div className="border-t border-dashed border-stone-400 w-48 pt-2 text-right">
-                    <p className="font-bold text-stone-800">For {selectedBiz?.name}</p>
-                    <p className="text-stone-600 mt-1">{selectedBiz?.signatoryName}</p>
-                    <p className="text-[10px] text-stone-500">{selectedBiz?.signatoryTitle}</p>
-                  </div>
-                </div>
+                <div><div className="border-t border-dashed border-stone-400 w-48 pt-2"><p className="font-bold text-stone-800">Receiver's Signature</p></div></div>
+                <div className="text-right flex flex-col items-end"><div className="border-t border-dashed border-stone-400 w-48 pt-2 text-right"><p className="font-bold text-stone-800">For {selectedBiz?.name}</p><p className="text-stone-600 mt-1">{selectedBiz?.signatoryName}</p><p className="text-[10px] text-stone-500">{selectedBiz?.signatoryTitle}</p></div></div>
               </div>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 };
