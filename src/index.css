@@ -63,7 +63,6 @@ html:not(.dark) .liquid-card {
 main, main > div, main section, main form, .liquid-card { min-width: 0; }
 .overflow-x-auto { -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
 table { max-width: 100%; }
-button, input, select, textarea { font-size: max(16px, 1em); }
 
 @media (min-width: 640px) and (max-width: 1279px) {
   body:has(nav[aria-label="Mobile and Tablet Touch Navigation"]) main { padding-bottom: 6rem !important; }
@@ -75,11 +74,15 @@ button, input, select, textarea { font-size: max(16px, 1em); }
 @media (max-width: 639px) {
   body:has(nav[aria-label="Mobile and Tablet Touch Navigation"]) main { padding-bottom: 6.5rem !important; }
   .liquid-card { border-radius: 20px; }
-  input, select, textarea { max-width: 100%; }
+  input, select, textarea { max-width: 100%; font-size: 16px; }
   table { min-width: 600px; }
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1280px) and (max-width: 1535px) {
+  body:has(nav[aria-label="Mobile and Tablet Touch Navigation"]) main { padding-bottom: 6rem !important; }
+}
+
+@media (min-width: 1536px) {
   .responsive-workspace { max-width: 1560px; }
 }
 
