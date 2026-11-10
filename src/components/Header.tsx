@@ -66,7 +66,7 @@ export const Header: React.FC<Props> = ({
             }}
             className="flex items-center gap-2.5 group"
           >
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-emerald-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform duration-200">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-emerald-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
               <i className="bx bxs-component text-xl"></i>
             </div>
             <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent whitespace-nowrap">
@@ -101,7 +101,7 @@ export const Header: React.FC<Props> = ({
             })
           ) : (
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              Free Hospital Client Self-Service Portal · Review Estimates, Approve Proposals, View Invoices
+              Free Client Self-Service Portal · Review estimates, approve proposals, and view invoices
             </span>
           )}
         </nav>
@@ -159,3 +159,4 @@ export const Header: React.FC<Props> = ({
     </header>
   );
 };
+
