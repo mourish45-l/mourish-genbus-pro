@@ -24,14 +24,12 @@ interface Props {
 }
 
 const DEFAULT_MILESTONES = [
-  'Architectural Drawing & Piping Route Approval',
-  'Copper Pipe Laying & Silver Brazing with N2 Purge',
-  'Manifold Room, Vacuum Pump & Air Plant Erection',
-  'Area Valve Service Units (AVSU) & Digital Alarms',
-  'Bed Head Units (BHU) & Modular OT Ceiling Pendants',
-  '24-Hour 150 PSI Nitrogen Pressure Hold Test',
-  'Gas Identification, Purity & Anti-Cross Connection Test',
-  'Commissioning, Hospital Staff Training & Handover Certificate',
+  'Scope approval & planning',
+  'Site readiness & procurement',
+  'Implementation & installation',
+  'Quality checks & validation',
+  'Client sign-off & handover',
+  'Final documentation & closure',
 ];
 
 export const ProjectsManager: React.FC<Props> = ({
@@ -47,15 +45,14 @@ export const ProjectsManager: React.FC<Props> = ({
   );
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  // New Project Form
   const [projectName, setProjectName] = useState('');
   const [customerId, setCustomerId] = useState('');
-  const [scope, setScope] = useState('Turnkey 150-Bed MGPS, Manifold & 2 Modular Operation Theaters');
+  const [scope, setScope] = useState('Business project implementation and delivery scope');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [targetDate, setTargetDate] = useState(
     new Date(Date.now() + 60 * 86400000).toISOString().split('T')[0]
   );
-  const [leadEngineer, setLeadEngineer] = useState(editorName || 'Senior MGPS Engineer');
+  const [leadEngineer, setLeadEngineer] = useState(editorName || 'Senior Project Lead');
 
   const activeProject = activeProjectId ? projects[activeProjectId] : projectList[0];
 
@@ -75,7 +72,7 @@ export const ProjectsManager: React.FC<Props> = ({
       bizId: 'mourish_developers_hq',
       name: projectName.trim(),
       customerId,
-      customerName: cust?.name || 'Hospital Client',
+      customerName: cust?.name || 'Business Client',
       scope: scope.trim(),
       startDate,
       targetDate,
@@ -123,16 +120,14 @@ export const ProjectsManager: React.FC<Props> = ({
 
   return (
     <div className="space-y-6">
-      
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
             <HardHat className="w-5 h-5 text-amber-500" />
-            <span>Zoho Projects · Hospital MGPS & OT Work Orders</span>
+            <span>Project Portfolio & Work Orders</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Track turnkey hospital infrastructure installation milestones, pressure hold testing, engineering lead assignments, and commissioning.
+            Track project milestones, execution progress, engineering lead assignments, and handover status.
           </p>
         </div>
 
@@ -145,23 +140,21 @@ export const ProjectsManager: React.FC<Props> = ({
           }}
           className="px-4 py-2.5 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-amber-600/20 transition"
         >
-          <Plus className="w-4 h-4" /> New Hospital Project
+          <Plus className="w-4 h-4" /> New Project
         </button>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
-        
-        {/* Left: Projects List */}
         <div className="xl:col-span-4 p-5 rounded-[28px] liquid-card border border-slate-200/80 dark:border-slate-800 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-            <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">Active Installations</h3>
+            <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">Active Projects</h3>
             <span className="text-xs text-slate-400 font-semibold">{projectList.length} Total</span>
           </div>
 
           <div className="space-y-2.5 max-h-[560px] overflow-y-auto pr-1">
             {projectList.length === 0 ? (
               <div className="p-8 text-center text-xs text-slate-400">
-                No active projects. Click <strong>New Hospital Project</strong> to launch an installation.
+                No active projects. Click <strong>New Project</strong> to launch a work order.
               </div>
             ) : (
               projectList.map((p) => {
@@ -195,7 +188,6 @@ export const ProjectsManager: React.FC<Props> = ({
                       {p.customerName}
                     </div>
 
-                    {/* Progress Bar */}
                     <div className="mt-3 space-y-1">
                       <div className="flex justify-between text-[10px] font-bold text-slate-400">
                         <span>Milestones: {(p.milestones || []).filter((m) => m.completed).length}/{(p.milestones || []).length}</span>
@@ -215,10 +207,8 @@ export const ProjectsManager: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* Right: Active Project Detail & Milestones */}
         {activeProject ? (
           <div className="xl:col-span-8 p-6 lg:p-8 rounded-[32px] liquid-card border border-slate-200/80 dark:border-slate-800 space-y-6 shadow-xl">
-            
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
               <div>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
@@ -228,7 +218,7 @@ export const ProjectsManager: React.FC<Props> = ({
                   {activeProject.name}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Client: <strong className="text-slate-800 dark:text-slate-200">{activeProject.customerName}</strong> · Lead Engineer: <strong className="text-indigo-600">{activeProject.leadEngineer}</strong>
+                  Client: <strong className="text-slate-800 dark:text-slate-200">{activeProject.customerName}</strong> · Lead: <strong className="text-indigo-600">{activeProject.leadEngineer}</strong>
                 </p>
               </div>
 
@@ -241,10 +231,9 @@ export const ProjectsManager: React.FC<Props> = ({
               </button>
             </div>
 
-            {/* Scope & Schedule Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1.5">
-                <div className="text-[10px] uppercase font-bold text-slate-400">Technical Scope & BOQ</div>
+                <div className="text-[10px] uppercase font-bold text-slate-400">Scope & Deliverables</div>
                 <div className="text-slate-800 dark:text-slate-200">{activeProject.scope}</div>
               </div>
 
@@ -256,11 +245,10 @@ export const ProjectsManager: React.FC<Props> = ({
               </div>
             </div>
 
-            {/* Milestones Checklist */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                  Hospital Turnkey Execution Milestones
+                  Project Execution Milestones
                 </h4>
                 <span className="text-xs text-amber-500 font-bold">
                   {(activeProject.milestones || []).filter((m) => m.completed).length} of {(activeProject.milestones || []).length} Verified
@@ -309,19 +297,18 @@ export const ProjectsManager: React.FC<Props> = ({
           <div className="xl:col-span-8 p-16 text-center rounded-[32px] liquid-card border border-slate-200 dark:border-slate-800 space-y-4">
             <HardHat className="w-12 h-12 text-slate-400 mx-auto" />
             <h4 className="font-bold text-base text-slate-900 dark:text-white">No Project Selected</h4>
-            <p className="text-xs text-slate-500">Select an installation work order from the left or launch a new one.</p>
+            <p className="text-xs text-slate-500">Select a project from the list or launch a new one.</p>
           </div>
         )}
 
       </div>
 
-      {/* New Project Modal */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
           <div className="w-full max-w-lg p-6 rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
-                New Hospital Infrastructure Project
+                New Project
               </h3>
               <button onClick={() => setIsCreateModalOpen(false)} className="text-slate-400 text-xs font-bold">
                 ✕
@@ -336,13 +323,13 @@ export const ProjectsManager: React.FC<Props> = ({
                   required
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
-                  placeholder="e.g. Apollo Hospital 120-Bed MGPS & 3 Modular OT Pipeline"
+                  placeholder="e.g. Business Expansion Project"
                   className="w-full mt-1 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300">Client Hospital *</label>
+                <label className="font-semibold text-slate-700 dark:text-slate-300">Business Client *</label>
                 <select
                   value={customerId}
                   onChange={(e) => setCustomerId(e.target.value)}
@@ -357,12 +344,12 @@ export const ProjectsManager: React.FC<Props> = ({
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300">Technical Scope & Deliverables</label>
+                <label className="font-semibold text-slate-700 dark:text-slate-300">Project Scope & Deliverables</label>
                 <textarea
                   rows={2}
                   value={scope}
                   onChange={(e) => setScope(e.target.value)}
-                  placeholder="e.g. Copper pipeline distribution, 2x manifold racks, 40 Oxygen outlets, 4 Modular OT pendants"
+                  placeholder="e.g. Business implementation, onboarding, and delivery scope"
                   className="w-full mt-1 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
                 />
               </div>
@@ -421,3 +408,4 @@ export const ProjectsManager: React.FC<Props> = ({
     </div>
   );
 };
+

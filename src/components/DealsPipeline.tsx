@@ -26,7 +26,7 @@ interface Props {
 
 const STAGES: { key: Deal['stage']; label: string; color: string }[] = [
   { key: 'QUALIFICATION', label: 'Lead Qualification', color: 'border-slate-500 text-slate-500' },
-  { key: 'SITE_SURVEY', label: 'Hospital Site Survey', color: 'border-blue-500 text-blue-500' },
+  { key: 'SITE_SURVEY', label: 'Site Survey', color: 'border-blue-500 text-blue-500' },
   { key: 'PROPOSAL_SENT', label: 'BOQ / Proposal Sent', color: 'border-indigo-500 text-indigo-500' },
   { key: 'TECHNICAL_EVAL', label: 'Technical Evaluation', color: 'border-purple-500 text-purple-500' },
   { key: 'NEGOTIATION', label: 'Commercial Negotiation', color: 'border-amber-500 text-amber-500' },
@@ -46,7 +46,6 @@ export const DealsPipeline: React.FC<Props> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Form State
   const [activeDealId, setActiveDealId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [customerId, setCustomerId] = useState('');
@@ -79,7 +78,7 @@ export const DealsPipeline: React.FC<Props> = ({
       bizId: 'mourish_developers_hq',
       title: title.trim(),
       customerId,
-      customerName: cust?.name || 'Hospital Client',
+      customerName: cust?.name || 'Business Client',
       value: Number(value) || 0,
       stage,
       probability: Number(probability) || 50,
@@ -120,21 +119,18 @@ export const DealsPipeline: React.FC<Props> = ({
 
   return (
     <div className="space-y-6">
-      
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
             <Target className="w-5 h-5 text-indigo-500" />
-            <span>Zoho CRM Sales & Deals Pipeline</span>
+            <span>Business CRM Deals Pipeline</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Track hospital infrastructure opportunities from initial site survey to commercial negotiation and project won.
+            Track business opportunities from initial site survey to commercial negotiation and project win.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* View Toggle */}
           <div className="p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center text-xs">
             <button
               onClick={() => setViewMode('kanban')}
@@ -165,7 +161,6 @@ export const DealsPipeline: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Pipeline Summary Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
         <div className="p-4 rounded-2xl liquid-card border border-slate-200 dark:border-slate-800">
           <span className="text-slate-500">Total Active Pipeline</span>
@@ -195,7 +190,6 @@ export const DealsPipeline: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Kanban Board Mode */}
       {viewMode === 'kanban' ? (
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-4 min-w-[1200px]">
@@ -227,7 +221,7 @@ export const DealsPipeline: React.FC<Props> = ({
                       stageDeals.map((deal) => (
                         <div
                           key={deal.id}
-                          className="p-3.5 rounded-2xl bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2.5 text-xs hover:border-indigo-500/50 transition group"
+                          className="p-3.5 rounded-2xl bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2.5 text-xs hover:border-indigo-500/50 transition"
                         >
                           <div className="flex items-start justify-between gap-1">
                             <div className="font-bold text-slate-900 dark:text-white leading-tight">
@@ -257,8 +251,6 @@ export const DealsPipeline: React.FC<Props> = ({
 
                           <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400">
                             <span>Close: {deal.expectedCloseDate || 'TBD'}</span>
-                            
-                            {/* Quick Next Stage Switcher */}
                             <select
                               value={deal.stage}
                               onChange={(e) => handleMoveStage(deal, e.target.value as any)}
@@ -281,13 +273,12 @@ export const DealsPipeline: React.FC<Props> = ({
           </div>
         </div>
       ) : (
-        /* List View */
         <div className="p-6 rounded-[32px] liquid-card border border-slate-200 dark:border-slate-800 shadow-xl overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead className="bg-slate-100 dark:bg-slate-900/80 text-slate-500 uppercase text-[10px] tracking-wider">
               <tr>
                 <th className="p-3">Deal Title</th>
-                <th className="p-3">Client Hospital</th>
+                <th className="p-3">Business Client</th>
                 <th className="p-3">Stage</th>
                 <th className="p-3 text-right">Value (₹)</th>
                 <th className="p-3 text-center">Probability</th>
@@ -341,7 +332,6 @@ export const DealsPipeline: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Create / Edit Deal Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
           <div className="w-full max-w-md p-6 rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-2xl">
@@ -362,13 +352,13 @@ export const DealsPipeline: React.FC<Props> = ({
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. City Care 120-Bed Medical Gas Pipeline & Vacuum"
+                  placeholder="e.g. Business Expansion Project Scope"
                   className="w-full mt-1 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300">Client Hospital *</label>
+                <label className="font-semibold text-slate-700 dark:text-slate-300">Business Client *</label>
                 <select
                   value={customerId}
                   onChange={(e) => setCustomerId(e.target.value)}
@@ -433,12 +423,12 @@ export const DealsPipeline: React.FC<Props> = ({
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300">Technical Scope Notes</label>
+                <label className="font-semibold text-slate-700 dark:text-slate-300">Project Notes</label>
                 <textarea
                   rows={2}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="e.g. Requires 2 manifold racks, digital alarm panel, 40 Oxygen outlets"
+                  placeholder="e.g. Requires site visit, scope confirmation, and final approval"
                   className="w-full mt-1 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
                 />
               </div>
@@ -466,3 +456,4 @@ export const DealsPipeline: React.FC<Props> = ({
     </div>
   );
 };
+
