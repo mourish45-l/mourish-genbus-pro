@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { BusinessProfile } from '../types';
 import {
   Building2,
@@ -16,9 +16,10 @@ import {
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  currentProfile: BusinessProfile;
+  currentProfile: BusinessProfile | null;
   onSaveProfile: (profile: BusinessProfile) => void;
   editorName: string;
+  isCreatingNew?: boolean;
 }
 
 export const BusinessOnboardingModal: React.FC<Props> = ({
@@ -27,6 +28,7 @@ export const BusinessOnboardingModal: React.FC<Props> = ({
   currentProfile,
   onSaveProfile,
   editorName,
+  isCreatingNew = false,
 }) => {
   const [name, setName] = useState('');
   const [gstin, setGstin] = useState('');
@@ -42,18 +44,58 @@ export const BusinessOnboardingModal: React.FC<Props> = ({
   const [signatoryTitle, setSignatoryTitle] = useState('');
   const [step, setStep] = useState<1 | 2>(1);
 
+  useEffect(() => {
+    if (isOpen) {
+      if (isCreatingNew || !currentProfile) {
+        setName('');
+        setGstin('');
+        setPhone('');
+        setEmail('');
+        setWebsite('');
+        setAddress('');
+        setBankName('');
+        setBankAccountNo('');
+        setBankIfsc('');
+        setBankBranch('');
+        setSignatoryName(editorName || '');
+        setSignatoryTitle('Authorized Signatory');
+      } else {
+        setName(currentProfile.name || '');
+        setGstin(currentProfile.gstin || '');
+        setPhone(currentProfile.phone || '');
+        setEmail(currentProfile.email || '');
+        setWebsite(currentProfile.website || '');
+        setAddress(currentProfile.address || '');
+        setBankName(currentProfile.bankName || '');
+        setBankAccountNo(currentProfile.bankAccountNo || '');
+        setBankIfsc(currentProfile.bankIfsc || '');
+        setBankBranch(currentProfile.bankBranch || '');
+        setSignatoryName(currentProfile.signatoryName || editorName || '');
+        setSignatoryTitle(currentProfile.signatoryTitle || 'Authorized Signatory');
+      }
+      setStep(1);
+    }
+  }, [isOpen, currentProfile, isCreatingNew, editorName]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const bizId = isCreatingNew || !currentProfile?.bizId
+      ? `biz_${Date.now()}`
+      : currentProfile.bizId;
+
     const updated: BusinessProfile = {
-      bizId: currentProfile.bizId || 'mourish_developers_hq',
+      bizId,
       name: name.trim(),
       gstin: gstin.trim(),
       phone: phone.trim(),
       email: email.trim(),
       website: website.trim(),
       address: address.trim(),
+      logoUrl: currentProfile?.logoUrl,
+      constitution: currentProfile?.constitution,
+      businessTypes: currentProfile?.businessTypes,
       bankName: bankName.trim(),
       bankAccountNo: bankAccountNo.trim(),
       bankIfsc: bankIfsc.trim(),
@@ -61,6 +103,7 @@ export const BusinessOnboardingModal: React.FC<Props> = ({
       signatoryName: signatoryName.trim(),
       signatoryTitle: signatoryTitle.trim(),
       lastEditedBy: editorName,
+      createdAt: currentProfile?.createdAt || Date.now(),
     };
     onSaveProfile(updated);
     onClose();

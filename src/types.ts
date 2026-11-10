@@ -13,6 +13,9 @@ export type BusinessConstitution =
   | 'Trust / Society'
   | 'Enterprise';
 
+export type DocumentTheme = 'modern' | 'bold' | 'classic' | 'minimal' | 'corporate';
+export type AccentColor = 'indigo' | 'emerald' | 'crimson' | 'amber' | 'blue' | 'purple' | 'slate';
+
 export interface BusinessProfile {
   bizId: string;
   name: string;
@@ -32,6 +35,8 @@ export interface BusinessProfile {
   signatoryTitle: string;
   lastEditedBy?: string;
   logoUrl?: string; // Uploaded custom company logo (Base64 data URL)
+  themeTemplate?: DocumentTheme; // Default template
+  accentColor?: AccentColor; // Default accent color
   division?: string;
   createdAt?: number;
   createdBy?: string;
@@ -105,6 +110,8 @@ export interface Quotation {
   customerApproved?: boolean;
   customerApprovedAt?: string;
   customerSignatory?: string;
+  template?: DocumentTheme;
+  accentColor?: AccentColor;
   lastEditedBy?: string;
   lastEditedAt?: string;
   createdAt?: number;
@@ -131,6 +138,8 @@ export interface Invoice {
   paymentMethod?: 'BANK_NEFT_RTGS' | 'CHEQUE' | 'ONLINE_TRANSFER' | 'CASH';
   paymentReference?: string;
   paidAt?: string;
+  template?: DocumentTheme;
+  accentColor?: AccentColor;
   createdAt?: number;
 }
 

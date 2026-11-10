@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import type { Quotation, CustomerRecord, CatalogueItem, BusinessProfile } from '../types';
+import type {
+  Quotation,
+  CustomerRecord,
+  CatalogueItem,
+  BusinessProfile,
+  DocumentTheme,
+  AccentColor,
+} from '../types';
 import {
   Plus,
   Printer,
@@ -14,6 +21,9 @@ import {
   FileCheck,
 } from 'lucide-react';
 import { downloadHighQualityPdf } from '../utils/pdfGenerator';
+import { getAccentConfig } from '../utils/documentTemplates';
+import { TemplateAccentBar } from './TemplateAccentBar';
+import { LogoUploader } from './LogoUploader';
 
 interface Props {
   quotations: Record<string, Quotation>;
@@ -30,6 +40,7 @@ interface Props {
   catalogue: Record<string, CatalogueItem>;
   editorName: string;
   businessProfile?: BusinessProfile;
+  onUpdateLogo?: (logoUrl: string) => void;
 }
 
 export const QuotationEditor: React.FC<Props> = ({
@@ -47,6 +58,7 @@ export const QuotationEditor: React.FC<Props> = ({
   catalogue,
   editorName,
   businessProfile,
+  onUpdateLogo,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCatId, setSelectedCatId] = useState<string>('');
@@ -92,6 +104,10 @@ export const QuotationEditor: React.FC<Props> = ({
   }
   const discount = Number(activeQuote?.discount || 0);
   const grandTotal = Math.max(0, subtotal + totalTax - discount);
+
+  const currentTemplate: DocumentTheme = activeQuote?.template || businessProfile?.themeTemplate || 'bold';
+  const currentAccent: AccentColor = activeQuote?.accentColor || businessProfile?.accentColor || 'indigo';
+  const accentConfig = getAccentConfig(currentAccent);
 
   return (
     <div className="space-y-4">
@@ -249,6 +265,26 @@ export const QuotationEditor: React.FC<Props> = ({
           id="printableQuotation"
           className="xl:col-span-8 p-6 lg:p-8 rounded-[32px] liquid-card border border-slate-200/80 dark:border-slate-800 space-y-6 shadow-xl"
         >
+          {/* Template & Accent Theme Bar */}
+          <div className="no-print">
+            <TemplateAccentBar
+              activeTemplate={currentTemplate}
+              activeAccent={currentAccent}
+              onSelectTemplate={(t) => onSaveQuoteField(activeQuote.id, 'template', t)}
+              onSelectAccent={(a) => onSaveQuoteField(activeQuote.id, 'accentColor', a)}
+              onApplyIndustryTemplate={(template) => {
+                template.items.forEach((it) => {
+                  onAddLineItem(activeQuote.id, {
+                    name: it.name,
+                    rate: it.rate,
+                    gst: it.gst,
+                    unit: it.unit,
+                  });
+                });
+              }}
+            />
+          </div>
+
           {/* Header Controls */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
             <div>
@@ -267,7 +303,7 @@ export const QuotationEditor: React.FC<Props> = ({
                   type="text"
                   value={activeQuote.quoteNumber || ''}
                   onChange={(e) => onSaveQuoteField(activeQuote.id, 'quoteNumber', e.target.value)}
-                  className="bg-transparent font-black text-xl text-slate-900 dark:text-white border-b border-transparent focus:border-indigo-500 focus:outline-none w-48"
+                  className="bg-transparent font-black text-xl text-slate-900 dark:text-white border-b border-transparent focus:border-indigo-500 focus:outline-none w-48 font-mono"
                   placeholder="QT-2026-001"
                 />
               </div>
@@ -289,7 +325,7 @@ export const QuotationEditor: React.FC<Props> = ({
               {onConvertToInvoice && (
                 <button
                   onClick={() => onConvertToInvoice(activeQuote.id)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition"
+                  className={`px-4 py-2 rounded-xl text-xs font-bold ${accentConfig.bgClass} text-white flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition`}
                   title="1-Click Convert Quote to official GST Tax Invoice"
                 >
                   <Receipt className="w-4 h-4" /> Convert to Invoice
@@ -312,7 +348,7 @@ export const QuotationEditor: React.FC<Props> = ({
 
               <button
                 onClick={() => downloadHighQualityPdf('printableQuotation', `Quotation_${activeQuote.quoteNumber}`)}
-                className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition"
+                className={`px-3.5 py-2 rounded-xl ${accentConfig.bgClass} text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition`}
                 title="Download High-Quality PDF"
               >
                 <Download className="w-4 h-4" />
@@ -339,24 +375,38 @@ export const QuotationEditor: React.FC<Props> = ({
 
           {/* Business Profile & Logo Banner on Estimate */}
           {businessProfile && (
-            <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800/80">
-              {businessProfile.logoUrl ? (
-                <img
-                  src={businessProfile.logoUrl}
-                  alt="Company Logo"
-                  className="w-11 h-11 object-contain rounded-xl border border-slate-200 dark:border-slate-700 p-0.5 bg-white shadow-sm"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
-                  {businessProfile.name?.charAt(0) || 'B'}
-                </div>
-              )}
-              <div>
-                <div className="font-extrabold text-sm text-slate-900 dark:text-white">{businessProfile.name}</div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                  GSTIN: {businessProfile.gstin || 'Registered'} · {businessProfile.phone}
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-slate-100 dark:border-slate-800/80">
+              <div className="flex items-center gap-3">
+                {businessProfile.logoUrl ? (
+                  <img
+                    src={businessProfile.logoUrl}
+                    alt="Company Logo"
+                    className="w-12 h-12 object-contain rounded-xl border border-slate-200 dark:border-slate-700 p-0.5 bg-white shadow-sm"
+                  />
+                ) : (
+                  <div className={`w-10 h-10 rounded-xl ${accentConfig.bgClass} text-white flex items-center justify-center font-bold text-sm shadow-sm`}>
+                    {businessProfile.name?.charAt(0) || 'B'}
+                  </div>
+                )}
+                <div>
+                  <div className="font-extrabold text-sm text-slate-900 dark:text-white">{businessProfile.name || 'Commercial Entity'}</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                    GSTIN: {businessProfile.gstin || 'Registered'} · {businessProfile.phone}
+                  </div>
                 </div>
               </div>
+
+              {onUpdateLogo && (
+                <div className="no-print">
+                  <LogoUploader
+                    logoUrl={businessProfile.logoUrl}
+                    onUpload={onUpdateLogo}
+                    onRemove={() => onUpdateLogo('')}
+                    compact
+                    label="Upload / Change Logo"
+                  />
+                </div>
+              )}
             </div>
           )}
 

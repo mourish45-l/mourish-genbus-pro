@@ -1,19 +1,24 @@
 import React, { useState, useMemo } from 'react';
 import type {
-  CustomerRecord,
   Quotation,
   Invoice,
   DeliveryChallan,
+  CustomerRecord,
   BusinessProfile,
-  ChatMessage
+  ChatMessage,
+  DocumentTheme,
+  AccentColor
 } from '../types';
 import { formatINR } from '../utils/crypto';
+import { downloadHighQualityPdf } from '../utils/pdfGenerator';
+import { getAccentConfig } from '../utils/documentTemplates';
+import { TemplateAccentBar } from './TemplateAccentBar';
 import {
   Search,
   Printer,
+  Download,
   CheckCircle2,
   Phone,
-  Mail,
   Building2,
   FileText,
   Receipt,
@@ -21,14 +26,9 @@ import {
   MessageSquare,
   Bell,
   ArrowRight,
-  ShieldCheck,
-  Clock,
-  Navigation,
-  UserCheck,
   RotateCcw,
-  Package,
-  Calendar,
-  AlertCircle
+  UserCheck,
+  Sparkles
 } from 'lucide-react';
 import { ChatHub } from './ChatHub';
 
@@ -37,7 +37,8 @@ interface Props {
   quotations: Record<string, Quotation>;
   invoices: Record<string, Invoice>;
   deliveries: Record<string, DeliveryChallan>;
-  businessProfile: BusinessProfile;
+  businessProfile?: BusinessProfile;
+  businesses?: Record<string, BusinessProfile>;
   messages: Record<string, ChatMessage>;
   fcmToken?: string | null;
   onEnableFcm?: () => void;
@@ -46,6 +47,7 @@ interface Props {
   onDeleteMessage: (msgId: string) => void;
   onUpdateCustomerSelf: (custId: string, name: string, phone: string, email: string) => void;
   onApproveQuote?: (quoteId: string, signatoryName: string) => void;
+  onSwitchToBusiness?: () => void;
 }
 
 export interface BusinessEntityOption {
@@ -61,6 +63,7 @@ export interface BusinessEntityOption {
   bankBranch: string;
   signatoryName: string;
   signatoryTitle: string;
+  logoUrl?: string;
   logoIcon: string;
 }
 
@@ -70,6 +73,7 @@ export const CustomerPortal: React.FC<Props> = ({
   invoices,
   deliveries,
   businessProfile,
+  businesses,
   messages,
   fcmToken,
   onEnableFcm,
@@ -77,70 +81,119 @@ export const CustomerPortal: React.FC<Props> = ({
   onEditMessage,
   onDeleteMessage,
   onUpdateCustomerSelf,
-  onApproveQuote
+  onApproveQuote,
+  onSwitchToBusiness
 }) => {
+  // Safe business profile fallback
+  const safeProfile: BusinessProfile = useMemo(() => {
+    return (
+      businessProfile ||
+      (businesses ? Object.values(businesses)[0] : null) || {
+        bizId: 'mourish_developers_hq',
+        name: 'Mourish GenBus',
+        division: 'Business Services & Project Delivery',
+        constitution: 'Proprietorship',
+        businessTypes: ['Enterprise Services', 'Project Delivery'],
+        gstin: '33CQLPT6813M1Z7',
+        phone: '9659233313 / 9487410078',
+        email: 'contact@mourishgenbus.in',
+        website: 'https://mourishgenbus.in',
+        address: 'Tamil Nadu, India',
+        bankName: 'HDFC Bank',
+        bankAccountNo: '50200084920193',
+        bankIfsc: 'HDFC0001824',
+        bankBranch: 'Commercial Branch, Tamil Nadu',
+        signatoryName: 'Mourish Nithin',
+        signatoryTitle: 'Managing Director',
+        logoUrl: '',
+        themeTemplate: 'bold' as DocumentTheme,
+        accentColor: 'indigo' as AccentColor,
+      }
+    );
+  }, [businessProfile, businesses]);
+
+  // Available business entities in ecosystem
+  const availableBusinesses: BusinessEntityOption[] = useMemo(() => {
+    if (businesses && Object.keys(businesses).length > 0) {
+      return Object.values(businesses).map((b) => ({
+        bizId: b.bizId,
+        name: b.name || 'Business Entity',
+        division: (b.businessTypes && b.businessTypes.join(', ')) || b.constitution || 'Commercial Enterprise',
+        gstin: b.gstin || '',
+        phone: b.phone || '',
+        address: b.address || '',
+        bankName: b.bankName || '',
+        bankAccountNo: b.bankAccountNo || '',
+        bankIfsc: b.bankIfsc || '',
+        bankBranch: b.bankBranch || '',
+        signatoryName: b.signatoryName || '',
+        signatoryTitle: b.signatoryTitle || '',
+        logoUrl: b.logoUrl,
+        logoIcon: 'bx-buildings'
+      }));
+    }
+
+    return [
+      {
+        bizId: safeProfile.bizId || 'mourish_developers_hq',
+        name: safeProfile.name || 'Mourish GenBus',
+        division: 'Business Services & Project Delivery',
+        gstin: safeProfile.gstin || '33CQLPT6813M1Z7',
+        phone: safeProfile.phone || '9659233313 / 9487410078',
+        address: safeProfile.address || 'Tamil Nadu, India',
+        bankName: safeProfile.bankName || 'HDFC Bank',
+        bankAccountNo: safeProfile.bankAccountNo || '50200084920193',
+        bankIfsc: safeProfile.bankIfsc || 'HDFC0001824',
+        bankBranch: safeProfile.bankBranch || 'Commercial Branch, Tamil Nadu',
+        signatoryName: safeProfile.signatoryName || 'Mourish Nithin',
+        signatoryTitle: safeProfile.signatoryTitle || 'Managing Director',
+        logoUrl: safeProfile.logoUrl,
+        logoIcon: 'bx-buildings'
+      }
+    ];
+  }, [businesses, safeProfile]);
+
   // Phone input & discovery state
   const [phoneNumberInput, setPhoneNumberInput] = useState('');
   const [searchedPhone, setSearchedPhone] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState('');
   const [selectedBiz, setSelectedBiz] = useState<BusinessEntityOption | null>(null);
+
+  const activeBiz: BusinessEntityOption = useMemo(() => {
+    return selectedBiz || availableBusinesses[0] || {
+      bizId: safeProfile.bizId || 'mourish_developers_hq',
+      name: safeProfile.name || 'Mourish GenBus',
+      division: 'Business Services & Project Delivery',
+      gstin: safeProfile.gstin || '33CQLPT6813M1Z7',
+      phone: safeProfile.phone || '9659233313 / 9487410078',
+      address: safeProfile.address || 'Tamil Nadu, India',
+      bankName: safeProfile.bankName || 'HDFC Bank',
+      bankAccountNo: safeProfile.bankAccountNo || '50200084920193',
+      bankIfsc: safeProfile.bankIfsc || 'HDFC0001824',
+      bankBranch: safeProfile.bankBranch || 'Commercial Branch, Tamil Nadu',
+      signatoryName: safeProfile.signatoryName || 'Mourish Nithin',
+      signatoryTitle: safeProfile.signatoryTitle || 'Managing Director',
+      logoUrl: safeProfile.logoUrl,
+      logoIcon: 'bx-buildings'
+    };
+  }, [selectedBiz, availableBusinesses, safeProfile]);
+
+  // Theme & Accent selection
+  const [activeTemplate, setActiveTemplate] = useState<DocumentTheme>(safeProfile.themeTemplate || 'bold');
+  const [activeAccent, setActiveAccent] = useState<AccentColor>(safeProfile.accentColor || 'indigo');
+  const accentConfig = getAccentConfig(activeAccent);
 
   // Portal view state
   const [activePortalTab, setActivePortalTab] = useState<'quotes' | 'invoices' | 'deliveries' | 'chat'>('quotes');
   const [approvingQuoteId, setApprovingQuoteId] = useState<string | null>(null);
   const [signatoryInput, setSignatoryInput] = useState('');
   const [printingDelivery, setPrintingDelivery] = useState<DeliveryChallan | null>(null);
-
-  // Available business entities in Mourish GenBus ecosystem
-  const availableBusinesses: BusinessEntityOption[] = useMemo(() => [
-    {
-      bizId: businessProfile.bizId || 'mourish_developers_hq',
-      name: businessProfile.name || 'Mourish Developers & Life Gas System',
-      division: 'Business Services & Project Delivery',
-      gstin: businessProfile.gstin || '33CQLPT6813M1Z7',
-      phone: businessProfile.phone || '9659233313 / 9487410078',
-      address: businessProfile.address || 'Tamil Nadu, India',
-      bankName: businessProfile.bankName || 'HDFC Bank',
-      bankAccountNo: businessProfile.bankAccountNo || '50200084920193',
-      bankIfsc: businessProfile.bankIfsc || 'HDFC0001824',
-      bankBranch: businessProfile.bankBranch || 'Commercial Branch, Tamil Nadu',
-      signatoryName: businessProfile.signatoryName || 'Mourish Nithin',
-      signatoryTitle: businessProfile.signatoryTitle || 'Managing Director',
-      logoIcon: 'bx-buildings'
-    },
-    {
-      bizId: 'lifegas_healthcare_services',
-      name: 'Life Gas Healthcare Infrastructure',
-      division: 'Industrial Gas & Infrastructure Services',
-      gstin: '33AABCL9921D1ZY',
-      phone: '9659233313',
-      address: 'Tamil Nadu, India',
-      bankName: 'HDFC Bank',
-      bankAccountNo: '50200084920193',
-      bankIfsc: 'HDFC0001824',
-      bankBranch: 'Commercial Branch, Tamil Nadu',
-      signatoryName: 'Mourish Nithin',
-      signatoryTitle: 'Lead Engineer',
-      logoIcon: 'bx-buildings'
-    },
-    {
-      bizId: 'mourish_digital_labs',
-      name: 'Mourish Digital & Tech Labs',
-      division: 'Software, Technology & Digital Services',
-      gstin: '33CQLPT6813M1Z7',
-      phone: '9487410078',
-      address: 'Tamil Nadu, India',
-      bankName: 'HDFC Bank',
-      bankAccountNo: '50200084920193',
-      bankIfsc: 'HDFC0001824',
-      bankBranch: 'Commercial Branch, Tamil Nadu',
-      signatoryName: 'Mourish Nithin',
-      signatoryTitle: 'Chief Technology Officer',
-      logoIcon: 'bx-code-alt'
-    }
-  ], [businessProfile]);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   // Clean phone helper
   const cleanPhone = (p?: string) => (p || '').replace(/[^0-9]/g, '');
+
+  const customerList = Object.values(customers);
 
   // Find customer match for searched phone
   const matchedCustomer = useMemo(() => {
@@ -148,11 +201,11 @@ export const CustomerPortal: React.FC<Props> = ({
     const cleanSearch = cleanPhone(searchedPhone);
     if (!cleanSearch) return null;
 
-    return Object.values(customers).find((c) => {
+    return customerList.find((c) => {
       const cClean = cleanPhone(c.phone);
       return cClean.includes(cleanSearch) || cleanSearch.includes(cClean);
     }) || null;
-  }, [customers, searchedPhone]);
+  }, [customerList, searchedPhone]);
 
   // Find counts per business for this phone
   const getBusinessStats = (bizId: string) => {
@@ -160,18 +213,18 @@ export const CustomerPortal: React.FC<Props> = ({
     const cleanSearch = searchedPhone ? cleanPhone(searchedPhone) : '';
 
     const quotesCount = Object.values(quotations).filter((q) => {
-      const matchCust = custId && q.customerId === custId;
+      const matchCust = custId ? q.customerId === custId : true;
       return matchCust && (q.status === 'FINALIZED' || q.status === 'APPROVED');
     }).length;
 
     const invoicesCount = Object.values(invoices).filter((inv) => {
-      return custId && inv.customerId === custId;
+      return custId ? inv.customerId === custId : true;
     }).length;
 
     const deliveriesCount = Object.values(deliveries).filter((d) => {
-      const phoneMatch = d.customerPhone && cleanPhone(d.customerPhone).includes(cleanSearch);
+      const phoneMatch = cleanSearch && d.customerPhone && cleanPhone(d.customerPhone).includes(cleanSearch);
       const custMatch = custId && d.customerId === custId;
-      return phoneMatch || custMatch;
+      return custId ? (phoneMatch || custMatch) : true;
     }).length;
 
     return { quotesCount, invoicesCount, deliveriesCount };
@@ -179,37 +232,54 @@ export const CustomerPortal: React.FC<Props> = ({
 
   const handleSearchPhone = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    setPhoneError('');
     const clean = cleanPhone(phoneNumberInput);
-    if (!clean || clean.length < 4) {
-      alert('Please enter a valid phone number (at least 4 digits).');
+    if (!clean || clean.length < 3) {
+      setPhoneError('Please enter at least 3 digits to search orders by phone.');
       return;
     }
     setSearchedPhone(phoneNumberInput.trim());
-    // Auto-select primary business
     setSelectedBiz(availableBusinesses[0]);
   };
 
-  // Filtered records for the selected business & customer
+  const handleQuickSelectCustomer = (c: CustomerRecord) => {
+    setPhoneNumberInput(c.phone);
+    setSearchedPhone(c.phone);
+    setPhoneError('');
+    setSelectedBiz(availableBusinesses[0]);
+  };
+
+  // Filtered records
   const customerQuotes = useMemo(() => {
-    if (!matchedCustomer) return [];
+    if (matchedCustomer) {
+      return Object.values(quotations).filter(
+        (q) => q.customerId === matchedCustomer.id && (q.status === 'FINALIZED' || q.status === 'APPROVED' || q.customerApproved)
+      );
+    }
+    // If no specific phone is searched yet, show all finalized quotes available
     return Object.values(quotations).filter(
-      (q) => q.customerId === matchedCustomer.id && (q.status === 'FINALIZED' || q.status === 'APPROVED' || q.customerApproved)
+      (q) => q.status === 'FINALIZED' || q.status === 'APPROVED' || q.customerApproved
     );
   }, [quotations, matchedCustomer]);
 
   const customerInvoices = useMemo(() => {
-    if (!matchedCustomer) return [];
-    return Object.values(invoices).filter((inv) => inv.customerId === matchedCustomer.id);
+    if (matchedCustomer) {
+      return Object.values(invoices).filter((inv) => inv.customerId === matchedCustomer.id);
+    }
+    return Object.values(invoices);
   }, [invoices, matchedCustomer]);
 
   const customerDeliveries = useMemo(() => {
-    const cleanSearch = searchedPhone ? cleanPhone(searchedPhone) : '';
-    const custId = matchedCustomer?.id;
-    return Object.values(deliveries).filter((d) => {
-      const phoneMatch = cleanSearch && d.customerPhone && cleanPhone(d.customerPhone).includes(cleanSearch);
-      const custMatch = custId && d.customerId === custId;
-      return phoneMatch || custMatch;
-    });
+    if (matchedCustomer) {
+      const cleanSearch = searchedPhone ? cleanPhone(searchedPhone) : '';
+      const custId = matchedCustomer.id;
+      return Object.values(deliveries).filter((d) => {
+        const phoneMatch = cleanSearch && d.customerPhone && cleanPhone(d.customerPhone).includes(cleanSearch);
+        const custMatch = custId && d.customerId === custId;
+        return phoneMatch || custMatch;
+      });
+    }
+    return Object.values(deliveries);
   }, [deliveries, matchedCustomer, searchedPhone]);
 
   const handleConfirmApproval = (quoteId: string) => {
@@ -219,561 +289,613 @@ export const CustomerPortal: React.FC<Props> = ({
     setSignatoryInput('');
   };
 
+  const handleDownloadPdf = async (elementId: string, fileName: string) => {
+    setIsExportingPdf(true);
+    await downloadHighQualityPdf(elementId, fileName);
+    setIsExportingPdf(false);
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
 
-      {/* FCM Status Notification Banner */}
-      <div className="bg-gradient-to-r from-teal-700 via-teal-800 to-indigo-900 text-white p-4 sm:p-5 rounded-3xl shadow-lg border border-teal-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20">
-            <Bell className="w-5 h-5 text-teal-200" />
-          </div>
+      {/* Top Navigation Bar: Portal Mode & Return to ERP */}
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center gap-3">
+          {activeBiz.logoUrl ? (
+            <img src={activeBiz.logoUrl} alt="Logo" className="w-10 h-10 rounded-2xl object-contain bg-white border border-slate-200 p-0.5" />
+          ) : (
+            <div className={`w-10 h-10 rounded-2xl ${accentConfig.bgClass} text-white flex items-center justify-center font-bold text-lg shadow-md`}>
+              {activeBiz.name?.charAt(0) || 'B'}
+            </div>
+          )}
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs uppercase font-extrabold tracking-wider text-teal-300">
-                Firebase Cloud Messaging
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                Client Self-Service Portal
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-teal-400/20 text-teal-200 border border-teal-400/30">
-                Project: Mourish GenBus
-              </span>
+              <span className="text-xs text-slate-400 font-mono">Realtime Live</span>
             </div>
-            <p className="text-xs text-teal-100 mt-0.5">
-              Receive live push alerts on quote approvals, invoices, and delivery updates.
-            </p>
+            <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+              {activeBiz.name}
+            </h2>
           </div>
         </div>
 
-        <div className="shrink-0">
+        {onSwitchToBusiness && (
+          <button
+            type="button"
+            onClick={onSwitchToBusiness}
+            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 font-bold text-xs flex items-center gap-2 shadow-sm transition"
+          >
+            <i className="bx bx-arrow-back text-sm"></i>
+            <span>Back to Business ERP</span>
+          </button>
+        )}
+      </div>
+
+      {/* FCM Live Push Notification Status */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4 rounded-3xl shadow-md border border-indigo-500/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+            <Bell className="w-4 h-4 text-indigo-300" />
+          </div>
+          <div>
+            <span className="font-bold text-indigo-200">Push Notifications & Updates: </span>
+            <span className="text-slate-300">Live alerts for quote approvals, tax invoices, and delivery tracking.</span>
+          </div>
+        </div>
+        <div>
           {fcmToken ? (
-            <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-500/20 text-teal-200 border border-teal-400/30 text-xs font-semibold">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Live Push Notifications Active</span>
-            </div>
+            <span className="px-3 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 font-bold flex items-center gap-1.5 border border-emerald-500/30">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Notifications Active
+            </span>
           ) : (
             <button
+              type="button"
               onClick={onEnableFcm}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white text-teal-900 font-bold text-xs hover:bg-teal-50 transition-all shadow-md"
+              className="px-4 py-1.5 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-100 transition shadow-sm"
             >
-              <Bell className="w-4 h-4 text-teal-700" />
-              <span>Enable Push Notifications</span>
+              Enable Notifications
             </button>
           )}
         </div>
       </div>
 
-      {/* Step 1: Customer Phone Number Entry */}
-      <div className="bg-white/90 backdrop-blur-xl p-6 sm:p-8 rounded-[32px] border border-stone-200/90 shadow-sm space-y-5">
+      {/* Client Phone Lookup & Quick-Select Bar */}
+      <div className="p-5 sm:p-6 rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-500/10 text-teal-700 border border-teal-500/20">
-              Client Self-Service Portal
-            </span>
-            <h2 className="text-2xl font-bold text-stone-900 font-serif mt-2">
-              Enter Your Phone Number to View Your Orders
-            </h2>
-            <p className="text-xs text-stone-500 mt-1 max-w-2xl">
-              Enter your registered phone number to find your quotes, invoices, and delivery updates from Mourish GenBus.
+            <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
+              <Search className="w-4 h-4 text-indigo-500" />
+              <span>Search Orders by Registered Contact Number</span>
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Enter phone to filter quotes, tax invoices, and material delivery notes specific to your account.
             </p>
           </div>
 
-          <form onSubmit={handleSearchPhone} className="flex w-full md:w-auto items-center gap-2">
-            <div className="relative flex-1 md:w-80">
-              <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+          <form onSubmit={handleSearchPhone} className="flex items-center gap-2 w-full md:w-auto">
+            <div className="relative flex-1 md:w-64">
+              <Phone className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="tel"
                 value={phoneNumberInput}
                 onChange={(e) => setPhoneNumberInput(e.target.value)}
-                placeholder="Enter your phone number"
-                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-stone-50 border border-stone-300 text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:bg-white transition-all"
+                placeholder="Enter 10-digit phone..."
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
               />
             </div>
             <button
               type="submit"
-              className="px-6 py-3 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-sm font-bold shadow-md shadow-teal-700/20 transition-all flex items-center gap-1.5 shrink-0"
+              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition shrink-0"
             >
-              <span>Find Orders</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>Find</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
+            {searchedPhone && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchedPhone(null);
+                  setPhoneNumberInput('');
+                }}
+                className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 text-xs transition"
+                title="Clear filter"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            )}
           </form>
         </div>
-      </div>
 
-      {/* Step 2: Available Businesses List for this Phone Number */}
-      {searchedPhone && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-stone-900 font-serif">
-                Businesses linked to: <span className="font-mono text-teal-700">{searchedPhone}</span>
-              </h3>
-              <p className="text-xs text-stone-500">
-                {matchedCustomer
-                  ? `Customer: ${matchedCustomer.name} (${matchedCustomer.company || 'Business Client'})`
-                  : 'Choose a business to view available documents, deliveries, and messages.'}
-              </p>
-            </div>
+        {phoneError && (
+          <p className="text-xs text-rose-500 font-bold" role="alert">{phoneError}</p>
+        )}
 
-            <button
-              onClick={() => {
-                setSearchedPhone(null);
-                setPhoneNumberInput('');
-              }}
-              className="text-xs font-semibold text-stone-500 hover:text-stone-800 flex items-center gap-1 px-3 py-1.5 rounded-xl hover:bg-stone-100"
-            >
-              <RotateCcw className="w-3.5 h-3.5" /> Clear Search
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {availableBusinesses.map((biz) => {
-              const isSelected = selectedBiz?.bizId === biz.bizId;
-              const stats = getBusinessStats(biz.bizId);
-
+        {/* Quick Click Client Pills */}
+        {customerList.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="text-[10px] uppercase font-bold text-slate-400 mr-1">
+              Registered Accounts:
+            </span>
+            {customerList.map((c) => {
+              const isSelected = matchedCustomer?.id === c.id;
               return (
-                <div
-                  key={biz.bizId}
-                  onClick={() => setSelectedBiz(biz)}
-                  className={`p-5 rounded-3xl border text-left cursor-pointer transition-all flex flex-col justify-between ${
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => handleQuickSelectCustomer(c)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
                     isSelected
-                      ? 'bg-white ring-2 ring-teal-600 border-transparent shadow-md'
-                      : 'bg-white/70 hover:bg-white border-stone-200 hover:border-teal-300 shadow-sm'
+                      ? 'bg-indigo-600 text-white shadow-sm font-bold'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
                   }`}
                 >
-                  <div>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-lg border border-teal-100">
-                        <Building2 className="w-5 h-5" />
-                      </div>
-                      {isSelected && (
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-600 text-white flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> Selected
-                        </span>
-                      )}
-                    </div>
-
-                    <h4 className="font-bold text-stone-900 text-sm leading-tight">{biz.name}</h4>
-                    <p className="text-xs text-stone-500 mt-1 line-clamp-2">{biz.division}</p>
-
-                    <div className="mt-3 pt-3 border-t border-stone-100 text-[11px] text-stone-600 space-y-0.5">
-                      <div>Tax ID: <span className="font-mono font-semibold">{biz.gstin}</span></div>
-                      <div>Contact: <span className="font-mono">{biz.phone}</span></div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-stone-100 flex items-center gap-1.5 flex-wrap">
-                    <span className="px-2 py-0.5 rounded-lg bg-teal-50 text-teal-800 text-[11px] font-semibold border border-teal-200">
-                      {stats.quotesCount} Quotes
-                    </span>
-                    <span className="px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-800 text-[11px] font-semibold border border-indigo-200">
-                      {stats.invoicesCount} Invoices
-                    </span>
-                    <span className="px-2 py-0.5 rounded-lg bg-blue-50 text-blue-800 text-[11px] font-semibold border border-blue-200">
-                      {stats.deliveriesCount} Deliveries
-                    </span>
-                  </div>
-                </div>
+                  <UserCheck className="w-3 h-3" />
+                  <span>{c.name}</span>
+                  <span className="text-[10px] opacity-75 font-mono">({c.phone})</span>
+                </button>
               );
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Step 3: Selected Business Customer Dashboard */}
-      {selectedBiz && searchedPhone && (
-        <div className="space-y-6">
-          <div className="bg-white/90 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-stone-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-teal-600 text-white flex items-center justify-center font-bold shadow-md shadow-teal-600/20">
-                <Building2 className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-stone-900 font-serif">{selectedBiz.name}</h3>
-                <p className="text-xs text-stone-500">
-                  {matchedCustomer ? `Viewing records for ${matchedCustomer.name}` : `Linked to phone ${searchedPhone}`}
-                </p>
-              </div>
+      {/* Document Template & Accent Picker Bar */}
+      <TemplateAccentBar
+        activeTemplate={activeTemplate}
+        activeAccent={activeAccent}
+        onSelectTemplate={(t) => setActiveTemplate(t)}
+        onSelectAccent={(a) => setActiveAccent(a)}
+      />
+
+      {/* Navigation Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 text-xs font-bold overflow-x-auto">
+        <button
+          type="button"
+          onClick={() => setActivePortalTab('quotes')}
+          className={`px-4 py-2 rounded-xl transition flex items-center gap-2 whitespace-nowrap ${
+            activePortalTab === 'quotes'
+              ? `${accentConfig.bgClass} text-white shadow-sm`
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          <span>Finalized Quotations ({customerQuotes.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActivePortalTab('invoices')}
+          className={`px-4 py-2 rounded-xl transition flex items-center gap-2 whitespace-nowrap ${
+            activePortalTab === 'invoices'
+              ? `${accentConfig.bgClass} text-white shadow-sm`
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Receipt className="w-4 h-4" />
+          <span>Tax Invoices ({customerInvoices.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActivePortalTab('deliveries')}
+          className={`px-4 py-2 rounded-xl transition flex items-center gap-2 whitespace-nowrap ${
+            activePortalTab === 'deliveries'
+              ? `${accentConfig.bgClass} text-white shadow-sm`
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Truck className="w-4 h-4" />
+          <span>Delivery Challans ({customerDeliveries.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActivePortalTab('chat')}
+          className={`px-4 py-2 rounded-xl transition flex items-center gap-2 whitespace-nowrap ${
+            activePortalTab === 'chat'
+              ? `${accentConfig.bgClass} text-white shadow-sm`
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <MessageSquare className="w-4 h-4" />
+          <span>Live Support Messages</span>
+        </button>
+      </div>
+
+      {/* TAB 1: FINALIZED QUOTATIONS */}
+      {activePortalTab === 'quotes' && (
+        <div className="space-y-5">
+          {customerQuotes.length === 0 ? (
+            <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-[28px] border border-dashed border-slate-300 dark:border-slate-800 space-y-2">
+              <FileText className="w-10 h-10 text-slate-400 mx-auto opacity-60" />
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">No Finalized Quotations Available</h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                No finalized proposals found under this filter. In Business ERP, set a quotation status to FINALIZED to display it here.
+              </p>
             </div>
+          ) : (
+            customerQuotes.map((q) => {
+              let sub = 0;
+              let tax = 0;
+              (q.items || []).forEach((it) => {
+                const line = (Number(it.qty) || 0) * (Number(it.rate) || 0);
+                sub += line;
+                tax += line * ((Number(it.gst) || 0) / 100);
+              });
+              const grand = Math.max(0, sub + tax - Number(q.discount || 0));
+              const docId = `quote-portal-doc-${q.id}`;
 
-            <div className="flex items-center gap-1 bg-stone-100 p-1.5 rounded-2xl text-xs font-bold overflow-x-auto w-full sm:w-auto">
-              <button
-                onClick={() => setActivePortalTab('quotes')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all whitespace-nowrap ${activePortalTab === 'quotes' ? 'bg-teal-700 text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'}`}
-              >
-                <FileText className="w-4 h-4" />
-                <span>Quotes ({customerQuotes.length})</span>
-              </button>
-
-              <button
-                onClick={() => setActivePortalTab('invoices')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all whitespace-nowrap ${activePortalTab === 'invoices' ? 'bg-teal-700 text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'}`}
-              >
-                <Receipt className="w-4 h-4" />
-                <span>Invoices ({customerInvoices.length})</span>
-              </button>
-
-              <button
-                onClick={() => setActivePortalTab('deliveries')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all whitespace-nowrap ${activePortalTab === 'deliveries' ? 'bg-teal-700 text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'}`}
-              >
-                <Truck className="w-4 h-4" />
-                <span>Deliveries ({customerDeliveries.length})</span>
-              </button>
-
-              <button
-                onClick={() => setActivePortalTab('chat')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all whitespace-nowrap ${activePortalTab === 'chat' ? 'bg-teal-700 text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'}`}
-              >
-                <MessageSquare className="w-4 h-4" />
-                <span>Messages</span>
-              </button>
-            </div>
-          </div>
-
-          {activePortalTab === 'quotes' && (
-            <div className="space-y-4">
-              {customerQuotes.length === 0 ? (
-                <div className="p-12 text-center bg-white/70 rounded-3xl border border-dashed border-stone-300">
-                  <FileText className="w-12 h-12 text-stone-400 mx-auto mb-3 opacity-60" />
-                  <h4 className="text-sm font-semibold text-stone-800">No Finalized Quotes Found</h4>
-                  <p className="text-xs text-stone-500 mt-1 max-w-md mx-auto">
-                    There are no finalized quotes available for this customer. Contact the business through the Messages tab for assistance.
-                  </p>
-                </div>
-              ) : (
-                customerQuotes.map((q) => {
-                  let sub = 0;
-                  let tax = 0;
-                  (q.items || []).forEach((it) => {
-                    const line = (Number(it.qty) || 0) * (Number(it.rate) || 0);
-                    sub += line;
-                    tax += line * ((Number(it.gst) || 0) / 100);
-                  });
-                  const grand = Math.max(0, sub + tax - Number(q.discount || 0));
-
-                  return (
-                    <div key={q.id} className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm space-y-4">
-                      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-100 pb-3">
+              return (
+                <div key={q.id} className="rounded-[32px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-sm space-y-5">
+                  <div id={docId} className="bg-white p-6 rounded-2xl text-slate-900 space-y-5">
+                    
+                    {/* Header with Template Style */}
+                    <div className={`p-4 rounded-2xl ${
+                      activeTemplate === 'bold'
+                        ? `${accentConfig.bgClass} text-white`
+                        : activeTemplate === 'corporate'
+                        ? 'bg-slate-900 text-white'
+                        : activeTemplate === 'classic'
+                        ? 'border-2 border-slate-900 bg-slate-50 text-slate-900'
+                        : 'bg-slate-50 text-slate-900 border border-slate-200'
+                    } flex flex-wrap items-start justify-between gap-4`}>
+                      <div className="flex items-start gap-3">
+                        {activeBiz.logoUrl ? (
+                          <img src={activeBiz.logoUrl} alt="Logo" className="w-12 h-12 object-contain rounded-xl bg-white border border-slate-200 p-0.5" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-white text-slate-900 flex items-center justify-center font-bold text-base shadow">
+                            {activeBiz.name?.charAt(0) || 'B'}
+                          </div>
+                        )}
                         <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-base text-stone-900">{q.quoteNumber}</span>
-                            <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">FINALIZED QUOTE</span>
-                            {q.customerApproved && (
-                              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-700 text-white flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3" /> Approved by {q.customerSignatory || 'Client'}
-                              </span>
-                            )}
-                          </div>
-                          <h4 className="font-bold text-sm text-stone-800 mt-1">{q.title}</h4>
-                          <p className="text-xs text-stone-400">Valid Until: {q.validUntil || '30 Days'}</p>
-                        </div>
-
-                        <div className="text-right">
-                          <span className="text-xs text-stone-500 block">Total Payable (incl. GST)</span>
-                          <span className="text-2xl font-black text-teal-700 font-mono block">{formatINR(grand)}</span>
+                          <h3 className="font-black text-lg">{activeBiz.name}</h3>
+                          <p className="text-xs opacity-90 font-mono">GSTIN: {activeBiz.gstin || 'Registered'} · {activeBiz.phone}</p>
+                          <p className="text-xs opacity-75">{activeBiz.address}</p>
                         </div>
                       </div>
 
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs">
-                          <thead>
-                            <tr className="border-b border-stone-100 text-[10px] uppercase text-stone-500 bg-stone-50">
-                              <th className="py-2 px-3">Item Description</th>
-                              <th className="py-2 px-3 text-center">HSN</th>
-                              <th className="py-2 px-3 text-center">Qty</th>
-                              <th className="py-2 px-3 text-right">Unit Rate</th>
-                              <th className="py-2 px-3 text-right">GST</th>
-                              <th className="py-2 px-3 text-right">Line Total</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-stone-100">
-                            {(q.items || []).map((item, idx) => {
-                              const lineRaw = (Number(item.qty) || 0) * (Number(item.rate) || 0);
-                              const lineTax = lineRaw * ((Number(item.gst) || 0) / 100);
-                              return (
-                                <tr key={idx} className="hover:bg-stone-50/50">
-                                  <td className="py-2.5 px-3 font-semibold text-stone-900">{item.name}</td>
-                                  <td className="py-2.5 px-3 text-center font-mono text-stone-500">{item.hsn || '9019'}</td>
-                                  <td className="py-2.5 px-3 text-center font-bold text-stone-800">{item.qty} {item.unit || 'Nos'}</td>
-                                  <td className="py-2.5 px-3 text-right font-mono">{formatINR(item.rate)}</td>
-                                  <td className="py-2.5 px-3 text-right font-mono text-stone-600">{item.gst}%</td>
-                                  <td className="py-2.5 px-3 text-right font-mono font-bold text-stone-900">{formatINR(lineRaw + lineTax)}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                      <div className="text-right">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-white/20 text-inherit border border-white/30 inline-block mb-1">
+                          COMMERCIAL ESTIMATE
+                        </span>
+                        <div className="font-mono font-bold text-base">{q.quoteNumber}</div>
+                        <div className="text-xs opacity-80">Valid: {q.validUntil || '30 Days'}</div>
                       </div>
+                    </div>
 
-                      {q.notes && (
-                        <div className="p-3 rounded-2xl bg-stone-50 text-xs text-stone-600 border border-stone-100">
-                          <strong>Terms & Milestones:</strong> {q.notes}
-                        </div>
-                      )}
-
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                        <button onClick={() => window.print()} className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-semibold text-stone-700 flex items-center gap-1.5">
-                          <Printer className="w-4 h-4" /> Print / Save PDF
-                        </button>
-
-                        {!q.customerApproved && onApproveQuote && (
-                          <div className="flex items-center gap-2">
-                            {approvingQuoteId === q.id ? (
-                              <div className="flex items-center gap-2">
-                                <input type="text" value={signatoryInput} onChange={(e) => setSignatoryInput(e.target.value)} placeholder="Authorized representative name" className="px-3 py-1.5 rounded-xl bg-stone-50 border border-stone-200 text-xs" />
-                                <button onClick={() => handleConfirmApproval(q.id)} className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center gap-1 shadow-sm">
-                                  <CheckCircle2 className="w-4 h-4" /> Confirm Approval
-                                </button>
-                                <button onClick={() => setApprovingQuoteId(null)} className="text-xs text-stone-400 hover:text-stone-700">Cancel</button>
-                              </div>
-                            ) : (
-                              <button onClick={() => { setApprovingQuoteId(q.id); setSignatoryInput(matchedCustomer?.name || ''); }} className="px-5 py-2.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-700/20">
-                                <CheckCircle2 className="w-4 h-4" /> Approve Quote Online
-                              </button>
-                            )}
-                          </div>
+                    {/* Customer & Scope Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs border-b border-slate-200 pb-4">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Client Account:</span>
+                        <div className="font-bold text-sm text-slate-900 mt-0.5">{q.customerName || matchedCustomer?.name}</div>
+                        <div className="text-slate-500 font-mono">Contact: {matchedCustomer?.phone || q.customerId}</div>
+                      </div>
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Proposal Title:</span>
+                        <div className="font-bold text-sm text-slate-900 mt-0.5">{q.title}</div>
+                        {q.customerApproved && (
+                          <span className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Approved by {q.customerSignatory || 'Client'}</span>
+                          </span>
                         )}
                       </div>
                     </div>
-                  );
-                })
-              )}
-            </div>
-          )}
 
-          {activePortalTab === 'invoices' && (
-            <div className="space-y-4">
-              <div className="p-5 rounded-3xl bg-indigo-50/70 border border-indigo-200 text-xs text-indigo-950 space-y-2">
-                <div className="flex items-center gap-2 text-indigo-900 font-bold uppercase tracking-wider text-[11px]">
-                  <Building2 className="w-4 h-4 text-indigo-700" />
-                  <span>Business Bank Transfer Details</span>
-                </div>
-                <p className="text-stone-600 text-xs">Use the bank details below to pay invoices by bank transfer:</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white p-3.5 rounded-2xl border border-indigo-100 font-medium">
-                  <div><span className="text-stone-400 block text-[10px] uppercase font-bold">Bank Name</span><strong className="text-stone-900 text-xs">{selectedBiz.bankName}</strong></div>
-                  <div><span className="text-stone-400 block text-[10px] uppercase font-bold">Account Number</span><strong className="text-stone-900 font-mono text-xs">{selectedBiz.bankAccountNo}</strong></div>
-                  <div><span className="text-stone-400 block text-[10px] uppercase font-bold">IFSC Code</span><strong className="text-stone-900 font-mono text-xs">{selectedBiz.bankIfsc}</strong></div>
-                  <div><span className="text-stone-400 block text-[10px] uppercase font-bold">Branch</span><strong className="text-stone-900 text-xs">{selectedBiz.bankBranch}</strong></div>
-                </div>
-              </div>
-
-              {customerInvoices.length === 0 ? (
-                <div className="p-12 text-center bg-white/70 rounded-3xl border border-dashed border-stone-300">
-                  <Receipt className="w-12 h-12 text-stone-400 mx-auto mb-3 opacity-60" />
-                  <h4 className="text-sm font-semibold text-stone-800">No Invoices Issued</h4>
-                  <p className="text-xs text-stone-500 mt-1 max-w-md mx-auto">No tax invoices have been generated for this customer.</p>
-                </div>
-              ) : (
-                customerInvoices.map((inv) => {
-                  let sub = 0;
-                  let tax = 0;
-                  (inv.items || []).forEach((it) => {
-                    const line = (Number(it.qty) || 0) * (Number(it.rate) || 0);
-                    sub += line;
-                    tax += line * ((Number(it.gst) || 0) / 100);
-                  });
-                  const grand = Math.max(0, sub + tax - Number(inv.discount || 0));
-                  const paid = Number(inv.paidAmount || 0);
-                  const bal = Math.max(0, grand - paid);
-
-                  return (
-                    <div key={inv.id} className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm space-y-4">
-                      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-100 pb-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-base text-stone-900">{inv.invoiceNumber}</span>
-                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold border ${inv.status === 'PAID' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : inv.status === 'PARTIAL' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-amber-50 text-amber-800 border-amber-200'}`}>{inv.status}</span>
-                          </div>
-                          <p className="text-xs text-stone-400 mt-0.5">Issue Date: {inv.issueDate} · Due Date: {inv.dueDate}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-xs text-stone-500 block">Balance Due</span>
-                          <span className="text-2xl font-black text-rose-600 font-mono block">{formatINR(bal)}</span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5 text-xs">
-                        {(inv.items || []).map((it, idx) => (
-                          <div key={idx} className="flex justify-between py-1 border-b border-stone-50">
-                            <span className="text-stone-700 font-medium">{it.qty}x {it.name}</span>
-                            <span className="font-mono font-bold text-stone-900">{formatINR((Number(it.qty) || 0) * (Number(it.rate) || 0))}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="flex items-center justify-between pt-3 border-t border-stone-100">
-                        <button onClick={() => window.print()} className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-semibold text-stone-700 flex items-center gap-1.5"><Printer className="w-4 h-4" /> Print Invoice</button>
-                        <div className="text-xs text-stone-500">Invoice Total: <strong className="text-stone-900">{formatINR(grand)}</strong> (Paid: {formatINR(paid)})</div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          )}
-
-          {activePortalTab === 'deliveries' && (
-            <div className="space-y-4">
-              {customerDeliveries.length === 0 ? (
-                <div className="p-12 text-center bg-white/70 rounded-3xl border border-dashed border-stone-300">
-                  <Truck className="w-12 h-12 text-stone-400 mx-auto mb-3 opacity-60" />
-                  <h4 className="text-sm font-semibold text-stone-800">No Deliveries Scheduled</h4>
-                  <p className="text-xs text-stone-500 mt-1 max-w-md mx-auto">There are no deliveries registered for this phone number. Delivery updates will appear here when available.</p>
-                </div>
-              ) : (
-                customerDeliveries.map((d) => {
-                  const stages = ['PREPARING', 'DISPATCHED', 'IN_TRANSIT', 'DELIVERED'];
-                  const currentIdx = stages.indexOf(d.status);
-
-                  return (
-                    <div key={d.id} className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm space-y-5">
-                      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-100 pb-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-base text-stone-900">{d.challanNumber}</span>
-                            <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">Delivery Challan</span>
-                          </div>
-                          <p className="text-xs text-stone-500 mt-0.5">Carrier: <strong className="text-stone-800">{d.carrierName || 'Direct delivery'}</strong> · Reference: <span className="font-mono font-bold text-stone-900">{d.vehicleOrLrNumber || 'N/A'}</span></p>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-xs text-stone-400 block">Est. Delivery</span>
-                          <span className="text-sm font-bold text-stone-900 block">{d.expectedDeliveryDate || 'Prompt'}</span>
-                        </div>
-                      </div>
-
-                      <div className="bg-stone-50 p-4 rounded-2xl border border-stone-100">
-                        <div className="grid grid-cols-4 gap-2 text-center relative">
-                          {stages.map((stage, idx) => {
-                            const isPassed = idx <= currentIdx;
-                            const isCurrent = idx === currentIdx;
-
+                    {/* Line Items Table */}
+                    <div className="overflow-x-auto">
+                      <table className={`w-full text-xs text-left ${activeTemplate === 'classic' ? 'border-collapse border border-slate-900' : ''}`}>
+                        <thead>
+                          <tr className={`border-b text-[10px] uppercase ${
+                            activeTemplate === 'classic'
+                              ? 'bg-slate-200 border-slate-900 font-bold'
+                              : 'bg-slate-50 text-slate-500 border-slate-200'
+                          }`}>
+                            <th className="py-2 px-3">Item Description</th>
+                            <th className="py-2 px-3 text-center">HSN</th>
+                            <th className="py-2 px-3 text-center">Qty</th>
+                            <th className="py-2 px-3 text-right">Unit Rate (₹)</th>
+                            <th className="py-2 px-3 text-right">GST %</th>
+                            <th className="py-2 px-3 text-right">Total (₹)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {(q.items || []).map((it, idx) => {
+                            const lineRaw = (Number(it.qty) || 0) * (Number(it.rate) || 0);
+                            const lineTax = lineRaw * ((Number(it.gst) || 0) / 100);
                             return (
-                              <div key={stage} className="flex flex-col items-center">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mb-1.5 transition-all ${isCurrent ? 'bg-teal-700 text-white ring-4 ring-teal-100' : isPassed ? 'bg-emerald-600 text-white' : 'bg-stone-200 text-stone-500'}`}>
-                                  {isPassed && !isCurrent ? '✓' : idx + 1}
-                                </div>
-                                <span className={`text-[11px] font-bold tracking-tight capitalize ${isCurrent ? 'text-teal-900 font-extrabold' : isPassed ? 'text-stone-800' : 'text-stone-400'}`}>{stage.replace('_', ' ').toLowerCase()}</span>
-                              </div>
+                              <tr key={idx} className={activeTemplate === 'classic' ? 'border-b border-slate-900' : ''}>
+                                <td className="py-2.5 px-3 font-semibold text-slate-900">{it.name}</td>
+                                <td className="py-2.5 px-3 text-center font-mono text-slate-500">{it.hsn || '—'}</td>
+                                <td className="py-2.5 px-3 text-center font-bold text-slate-800">{it.qty} {it.unit || 'Nos'}</td>
+                                <td className="py-2.5 px-3 text-right font-mono">{formatINR(it.rate)}</td>
+                                <td className="py-2.5 px-3 text-right font-mono">{it.gst}%</td>
+                                <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">{formatINR(lineRaw + lineTax)}</td>
+                              </tr>
                             );
                           })}
-                        </div>
-                      </div>
+                        </tbody>
+                      </table>
+                    </div>
 
+                    {/* Summary & Totals */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-200 text-xs">
                       <div>
-                        <h5 className="text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">Delivery Items</h5>
-                        <div className="divide-y divide-stone-100 border border-stone-100 rounded-2xl overflow-hidden bg-stone-50/50">
-                          {(d.items || []).map((it, idx) => (
-                            <div key={idx} className="p-3 flex items-center justify-between text-xs">
-                              <span className="font-semibold text-stone-900">{it.name}</span>
-                              <span className="font-bold text-stone-800 font-mono">{it.qtyDispatched} {it.unit}</span>
-                            </div>
-                          ))}
-                        </div>
+                        {q.notes && (
+                          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600">
+                            <strong>Terms & Notes:</strong> {q.notes}
+                          </div>
+                        )}
                       </div>
 
-                      {d.receivedBy && (
-                        <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <span>Delivered and acknowledged by: <strong>{d.receivedBy}</strong></span>
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-right font-medium">
+                        <div className="flex justify-between text-slate-600">
+                          <span>Subtotal:</span>
+                          <span className="font-mono text-slate-900">{formatINR(sub)}</span>
                         </div>
-                      )}
-
-                      <div className="flex items-center justify-between pt-2">
-                        <button onClick={() => setPrintingDelivery(d)} className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-semibold text-stone-700 flex items-center gap-1.5"><Printer className="w-4 h-4" /> View & Print Delivery Note</button>
-                        <span className="text-xs text-stone-400 font-mono">Dispatch Date: {d.dispatchDate}</span>
+                        <div className="flex justify-between text-slate-600">
+                          <span>Total GST:</span>
+                          <span className="font-mono text-slate-900">{formatINR(tax)}</span>
+                        </div>
+                        <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-sm font-black">
+                          <span>Grand Total:</span>
+                          <span className={`text-xl font-mono ${accentConfig.textClass}`}>{formatINR(grand)}</span>
+                        </div>
                       </div>
                     </div>
-                  );
-                })
-              )}
-            </div>
-          )}
+                  </div>
 
-          {activePortalTab === 'chat' && (
-            <div className="max-w-3xl mx-auto">
-              <ChatHub
-                messages={messages}
-                currentThreadId={matchedCustomer ? `cust_${matchedCustomer.id}` : `phone_${cleanPhone(searchedPhone)}`}
-                onSelectThread={() => {}}
-                customers={matchedCustomer ? { [matchedCustomer.id]: matchedCustomer } : {}}
-                onSendMessage={onSendMessage}
-                onEditMessage={onEditMessage}
-                onDeleteMessage={onDeleteMessage}
-                currentUserRole="CUSTOMER"
-                currentUserName={matchedCustomer?.name || `Customer (${searchedPhone})`}
-              />
-            </div>
+                  {/* Action Controls */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadPdf(docId, `Quotation_${q.quoteNumber}`)}
+                        disabled={isExportingPdf}
+                        className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-2 shadow-md transition disabled:opacity-50"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>Download High-Quality PDF</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => window.print()}
+                        className="px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5"
+                      >
+                        <Printer className="w-4 h-4" /> Print
+                      </button>
+                    </div>
+
+                    {!q.customerApproved && onApproveQuote && (
+                      <div className="flex items-center gap-2">
+                        {approvingQuoteId === q.id ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={signatoryInput}
+                              onChange={(e) => setSignatoryInput(e.target.value)}
+                              placeholder="Your full name..."
+                              className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmApproval(q.id)}
+                              className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center gap-1"
+                            >
+                              <CheckCircle2 className="w-4 h-4" /> Confirm
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setApprovingQuoteId(null)}
+                              className="text-xs text-slate-400"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setApprovingQuoteId(q.id);
+                              setSignatoryInput(matchedCustomer?.name || '');
+                            }}
+                            className="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
+                          >
+                            <CheckCircle2 className="w-4 h-4" /> Approve Proposal Online
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
       )}
 
-      {printingDelivery && (
-        <div className="fixed inset-0 z-50 bg-stone-900/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-4xl w-full p-8 shadow-2xl border border-stone-200 my-6">
-            <div className="flex items-center justify-between pb-4 border-b border-stone-200 mb-6 print:hidden">
-              <span className="text-sm font-semibold text-stone-500">Delivery Note Preview</span>
-              <div className="flex items-center gap-2">
-                <button onClick={() => window.print()} className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 text-white rounded-xl text-xs font-semibold hover:bg-stone-800"><Printer className="w-4 h-4" /> Print</button>
-                <button onClick={() => setPrintingDelivery(null)} className="px-4 py-2 text-xs font-semibold text-stone-500 hover:text-stone-800">Close</button>
-              </div>
+      {/* TAB 2: TAX INVOICES */}
+      {activePortalTab === 'invoices' && (
+        <div className="space-y-5">
+          {/* Bank Payment Remittance Box */}
+          <div className="p-5 rounded-3xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs space-y-2">
+            <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-[11px] text-indigo-900 dark:text-indigo-200">
+              <Building2 className="w-4 h-4 text-indigo-600" />
+              <span>Official Enterprise Bank Remittance Account (Zero Payment Gateway Deductions)</span>
             </div>
-
-            <div className="border border-stone-800 p-8 rounded-xl bg-white text-stone-900 text-xs">
-              <div className="text-center pb-4 border-b-2 border-stone-800">
-                <h2 className="text-xl font-bold uppercase tracking-wider font-serif">DELIVERY NOTE</h2>
-                <p className="text-xs text-stone-600 mt-0.5">Delivery record</p>
-              </div>
-
-              <div className="grid grid-cols-2 border-b border-stone-800 py-4 gap-4">
-                <div className="border-r border-stone-800 pr-4">
-                  <h4 className="font-bold text-stone-900 uppercase">Supplier:</h4>
-                  <p className="font-bold text-stone-900 text-sm mt-1">{selectedBiz?.name}</p>
-                  <p className="text-stone-700 whitespace-pre-line mt-0.5">{selectedBiz?.address}</p>
-                  <p className="mt-1 font-semibold">Tax ID: <span className="font-mono">{selectedBiz?.gstin}</span></p>
-                </div>
-                <div>
-                  <h4 className="font-bold text-stone-900 uppercase">Customer / Recipient:</h4>
-                  <p className="font-bold text-stone-900 text-sm mt-1">{printingDelivery.customerName}</p>
-                  <p className="text-stone-700 whitespace-pre-line mt-0.5">{printingDelivery.customerAddress || 'Customer Site'}</p>
-                  <p className="mt-1 font-semibold">Phone: {printingDelivery.customerPhone || searchedPhone}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-4 border-b border-stone-800 py-3 bg-stone-50 gap-2">
-                <div><span className="text-stone-500 block">Delivery Note No.:</span><span className="font-bold font-mono text-stone-900">{printingDelivery.challanNumber}</span></div>
-                <div><span className="text-stone-500 block">Dispatch Date:</span><span className="font-bold text-stone-900">{printingDelivery.dispatchDate}</span></div>
-                <div><span className="text-stone-500 block">Carrier:</span><span className="font-bold text-stone-900">{printingDelivery.carrierName}</span></div>
-                <div><span className="text-stone-500 block">Vehicle / Reference:</span><span className="font-bold font-mono text-stone-900">{printingDelivery.vehicleOrLrNumber || 'Local'}</span></div>
-              </div>
-
-              <table className="w-full text-xs mt-4 border-collapse">
-                <thead>
-                  <tr className="border-b-2 border-stone-800 bg-stone-100 text-stone-800 font-bold">
-                    <th className="py-2 px-3 text-left w-12">#</th>
-                    <th className="py-2 px-3 text-left">Item Description</th>
-                    <th className="py-2 px-3 text-center w-24">Quantity</th>
-                    <th className="py-2 px-3 text-center w-20">Unit</th>
-                    <th className="py-2 px-3 text-left w-48">Notes</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-200">
-                  {(printingDelivery.items || []).map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="py-2.5 px-3 font-mono">{idx + 1}</td>
-                      <td className="py-2.5 px-3 font-semibold text-stone-900">{item.name}</td>
-                      <td className="py-2.5 px-3 text-center font-bold text-stone-900">{item.qtyDispatched}</td>
-                      <td className="py-2.5 px-3 text-center text-stone-700">{item.unit}</td>
-                      <td className="py-2.5 px-3 text-stone-500">{item.notes || '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              <div className="grid grid-cols-2 pt-12 text-xs">
-                <div><div className="border-t border-dashed border-stone-400 w-48 pt-2"><p className="font-bold text-stone-800">Receiver's Signature</p></div></div>
-                <div className="text-right flex flex-col items-end"><div className="border-t border-dashed border-stone-400 w-48 pt-2 text-right"><p className="font-bold text-stone-800">For {selectedBiz?.name}</p><p className="text-stone-600 mt-1">{selectedBiz?.signatoryName}</p><p className="text-[10px] text-stone-500">{selectedBiz?.signatoryTitle}</p></div></div>
-              </div>
+            <p className="text-slate-600 dark:text-slate-300">
+              Remit invoice payments via direct RTGS / NEFT / IMPS Netbanking:
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-indigo-100 dark:border-indigo-900 font-medium text-slate-900 dark:text-white">
+              <div><span className="text-slate-400 block text-[10px] uppercase font-bold">Bank Name</span><strong>{activeBiz.bankName || 'HDFC Bank'}</strong></div>
+              <div><span className="text-slate-400 block text-[10px] uppercase font-bold">Account Number</span><strong className="font-mono">{activeBiz.bankAccountNo || '50200084920193'}</strong></div>
+              <div><span className="text-slate-400 block text-[10px] uppercase font-bold">IFSC Code</span><strong className="font-mono">{activeBiz.bankIfsc || 'HDFC0001824'}</strong></div>
+              <div><span className="text-slate-400 block text-[10px] uppercase font-bold">Branch</span><strong>{activeBiz.bankBranch || 'Commercial Branch'}</strong></div>
             </div>
           </div>
+
+          {customerInvoices.length === 0 ? (
+            <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-[28px] border border-dashed border-slate-300 dark:border-slate-800">
+              <Receipt className="w-10 h-10 text-slate-400 mx-auto opacity-60 mb-2" />
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">No Invoices Issued</h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">No invoices generated yet for this account.</p>
+            </div>
+          ) : (
+            customerInvoices.map((inv) => {
+              let sub = 0;
+              let tax = 0;
+              (inv.items || []).forEach((it) => {
+                const line = (Number(it.qty) || 0) * (Number(it.rate) || 0);
+                sub += line;
+                tax += line * ((Number(it.gst) || 0) / 100);
+              });
+              const grand = Math.max(0, sub + tax - Number(inv.discount || 0));
+              const paid = Number(inv.paidAmount || 0);
+              const bal = Math.max(0, grand - paid);
+              const invDocId = `invoice-portal-doc-${inv.id}`;
+
+              return (
+                <div key={inv.id} className="rounded-[32px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-sm space-y-4">
+                  <div id={invDocId} className="bg-white p-6 rounded-2xl text-slate-900 space-y-5">
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                      <div className="flex items-center gap-3">
+                        {activeBiz.logoUrl ? (
+                          <img src={activeBiz.logoUrl} alt="Logo" className="w-12 h-12 object-contain rounded-xl bg-white border border-slate-200 p-0.5" />
+                        ) : (
+                          <div className={`w-10 h-10 rounded-xl ${accentConfig.bgClass} text-white flex items-center justify-center font-bold text-lg`}>
+                            {activeBiz.name?.charAt(0) || 'B'}
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="font-black text-lg text-slate-900">{activeBiz.name}</h4>
+                          <p className="text-xs text-slate-500 font-mono">GSTIN: {activeBiz.gstin || 'Registered'}</p>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-xs uppercase font-extrabold tracking-wider px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 inline-block mb-1">
+                          TAX INVOICE
+                        </span>
+                        <div className="font-mono font-bold text-base text-slate-900">{inv.invoiceNumber}</div>
+                        <div className="text-xs text-slate-500">Date: {inv.issueDate} · Due: {inv.dueDate}</div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-xs border-b border-slate-200 pb-3">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Billed To:</span>
+                        <div className="font-bold text-sm text-slate-900">{inv.customerName}</div>
+                        <div className="text-slate-500">{inv.customerAddress || matchedCustomer?.address}</div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Balance Due:</span>
+                        <div className="text-xl font-black text-rose-600 font-mono">{formatINR(bal)}</div>
+                        <span className="text-xs text-slate-500">Paid: {formatINR(paid)} / Total: {formatINR(grand)}</span>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs text-left">
+                        <thead>
+                          <tr className="border-b border-slate-200 text-[10px] uppercase text-slate-500 bg-slate-50">
+                            <th className="py-2 px-3">Item</th>
+                            <th className="py-2 px-3 text-center">HSN</th>
+                            <th className="py-2 px-3 text-center">Qty</th>
+                            <th className="py-2 px-3 text-right">Rate</th>
+                            <th className="py-2 px-3 text-right">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {(inv.items || []).map((it, idx) => (
+                            <tr key={idx}>
+                              <td className="py-2.5 px-3 font-semibold text-slate-900">{it.name}</td>
+                              <td className="py-2.5 px-3 text-center font-mono text-slate-500">{it.hsn || '—'}</td>
+                              <td className="py-2.5 px-3 text-center font-bold text-slate-800">{it.qty} {it.unit}</td>
+                              <td className="py-2.5 px-3 text-right font-mono">{formatINR(it.rate)}</td>
+                              <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">{formatINR((Number(it.qty) || 0) * (Number(it.rate) || 0))}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadPdf(invDocId, `Tax_Invoice_${inv.invoiceNumber}`)}
+                      disabled={isExportingPdf}
+                      className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-2 shadow-md transition disabled:opacity-50"
+                    >
+                      <Download className="w-4 h-4" /> Download PDF
+                    </button>
+                    <div className="text-xs text-slate-500 font-medium">Invoice Total: <strong className="text-slate-900 dark:text-white">{formatINR(grand)}</strong></div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* TAB 3: DELIVERIES */}
+      {activePortalTab === 'deliveries' && (
+        <div className="space-y-5">
+          {customerDeliveries.length === 0 ? (
+            <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-[28px] border border-dashed border-slate-300 dark:border-slate-800">
+              <Truck className="w-10 h-10 text-slate-400 mx-auto opacity-60 mb-2" />
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">No Deliveries Scheduled</h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">Material dispatches and transport waybills will appear here once scheduled.</p>
+            </div>
+          ) : (
+            customerDeliveries.map((d) => (
+              <div key={d.id} className="p-6 rounded-[32px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-base text-slate-900 dark:text-white">{d.challanNumber}</span>
+                      <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200">
+                        Delivery Challan (Rule 55)
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">Carrier: <strong>{d.carrierName}</strong> · Waybill / Vehicle: <strong className="font-mono">{d.vehicleOrLrNumber || 'Local'}</strong></p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs text-slate-400 block">Est. Delivery Date:</span>
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">{d.expectedDeliveryDate || 'Prompt'}</span>
+                  </div>
+                </div>
+
+                <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden bg-slate-50/50 dark:bg-slate-800/40">
+                  {(d.items || []).map((it, idx) => (
+                    <div key={idx} className="p-3 flex items-center justify-between text-xs">
+                      <span className="font-semibold text-slate-900 dark:text-white">{it.name}</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">{it.qtyDispatched} {it.unit}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* TAB 4: LIVE SUPPORT CHAT */}
+      {activePortalTab === 'chat' && (
+        <div className="max-w-3xl mx-auto">
+          <ChatHub
+            messages={messages}
+            currentThreadId={matchedCustomer ? `cust_${matchedCustomer.id}` : 'cust_general'}
+            onSelectThread={() => {}}
+            customers={customers}
+            onSendMessage={onSendMessage}
+            onEditMessage={onEditMessage}
+            onDeleteMessage={onDeleteMessage}
+            currentUserRole="CUSTOMER"
+            currentUserName={matchedCustomer?.name || 'Client Contact'}
+          />
         </div>
       )}
     </div>

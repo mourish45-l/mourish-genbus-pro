@@ -129,13 +129,22 @@ export default function App() {
     }
   }, [isDark]);
 
-  // Auth State Listener
+  // Auth State Listener with safety timeout
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setIsAuthChecking(false);
     });
-    return () => unsub();
+
+    // Safety timeout in case Firebase auth takes too long or is delayed
+    const timer = setTimeout(() => {
+      setIsAuthChecking(false);
+    }, 1200);
+
+    return () => {
+      unsub();
+      clearTimeout(timer);
+    };
   }, []);
 
   // Check if business profile needs initial onboarding on login
@@ -733,6 +742,7 @@ export default function App() {
             quotations={quotations}
             invoices={invoices}
             deliveries={deliveries}
+            businessProfile={activeBusiness}
             businesses={businesses}
             messages={messages}
             fcmToken={fcmToken}
@@ -742,6 +752,7 @@ export default function App() {
             onDeleteMessage={handleDeleteMessage}
             onUpdateCustomerSelf={handleUpdateCustomerSelf}
             onApproveQuote={handleApproveQuote}
+            onSwitchToBusiness={() => setPortalMode('business')}
           />
         ) : (
           /* ========================================================================= */
@@ -857,6 +868,7 @@ export default function App() {
                   catalogue={catalogue}
                   editorName={currentUser.displayName || currentUser.email?.split('@')[0] || 'Business Admin'}
                   businessProfile={activeBusiness}
+                  onUpdateLogo={(newLogo) => handleSaveBusinessProfile({ ...activeBusiness, logoUrl: newLogo })}
                 />
               )}
 
@@ -869,6 +881,7 @@ export default function App() {
                   onSaveInvoice={handleSaveInvoice}
                   onDeleteInvoice={handleDeleteInvoice}
                   editorName={currentUser.displayName || currentUser.email?.split('@')[0] || 'Business Admin'}
+                  onUpdateLogo={(newLogo) => handleSaveBusinessProfile({ ...activeBusiness, logoUrl: newLogo })}
                 />
               )}
 
@@ -967,9 +980,10 @@ export default function App() {
       />
 
       {/* Mobile & Tablet Touch Navigation Bar */}
-      {currentUser && (
+      {(currentUser || portalMode === 'customer') && (
         <MobileTouchBar
           portalMode={portalMode}
+          onSwitchPortal={(mode) => setPortalMode(mode)}
           activeBizTab={activeBizTab}
           onSelectBizTab={(tab) => setActiveBizTab(tab)}
         />

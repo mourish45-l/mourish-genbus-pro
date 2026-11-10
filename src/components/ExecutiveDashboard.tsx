@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import type { Deal, CustomerRecord } from '../types';
+import type {
+  Quotation,
+  Invoice,
+  DeliveryChallan,
+  Deal,
+  Project,
+  CustomerRecord,
+  BusinessTab,
+} from '../types';
 import { formatINR, formatCompactINR } from '../utils/crypto';
 import {
   TrendingUp,

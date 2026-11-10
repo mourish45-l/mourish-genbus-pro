@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import type { Invoice, CustomerRecord, CatalogueItem, BusinessProfile } from '../types';
+import type {
+  Invoice,
+  CustomerRecord,
+  CatalogueItem,
+  BusinessProfile,
+  DocumentTheme,
+  AccentColor,
+} from '../types';
 import { formatINR } from '../utils/crypto';
 import {
   Receipt,
@@ -20,6 +27,9 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { downloadHighQualityPdf } from '../utils/pdfGenerator';
+import { getAccentConfig } from '../utils/documentTemplates';
+import { TemplateAccentBar } from './TemplateAccentBar';
+import { LogoUploader } from './LogoUploader';
 
 interface Props {
   invoices: Record<string, Invoice>;
@@ -29,6 +39,7 @@ interface Props {
   onSaveInvoice: (invoice: Invoice) => void;
   onDeleteInvoice: (id: string) => void;
   editorName: string;
+  onUpdateLogo?: (logoUrl: string) => void;
 }
 
 export const InvoiceManager: React.FC<Props> = ({
@@ -39,6 +50,7 @@ export const InvoiceManager: React.FC<Props> = ({
   onSaveInvoice,
   onDeleteInvoice,
   editorName,
+  onUpdateLogo,
 }) => {
   const invoiceList = Object.values(invoices);
   const [activeInvoiceId, setActiveInvoiceId] = useState<string | null>(
@@ -75,6 +87,10 @@ export const InvoiceManager: React.FC<Props> = ({
   const grandTotal = Math.max(0, subtotal + totalTax - discount);
   const paidAmount = Number(activeInvoice?.paidAmount || 0);
   const balanceDue = Math.max(0, grandTotal - paidAmount);
+
+  const currentTemplate: DocumentTheme = activeInvoice?.template || businessProfile?.themeTemplate || 'bold';
+  const currentAccent: AccentColor = activeInvoice?.accentColor || businessProfile?.accentColor || 'indigo';
+  const accentConfig = getAccentConfig(currentAccent);
 
   // Create New Invoice Directly
   const handleCreateNewInvoice = () => {
@@ -279,6 +295,28 @@ export const InvoiceManager: React.FC<Props> = ({
             className="xl:col-span-8 p-6 lg:p-8 rounded-[32px] liquid-card border border-slate-200/80 dark:border-slate-800 space-y-6 shadow-xl"
           >
             
+            {/* Template & Accent Theme Bar */}
+            <div className="no-print">
+              <TemplateAccentBar
+                activeTemplate={currentTemplate}
+                activeAccent={currentAccent}
+                onSelectTemplate={(t) => handleUpdateField('template', t)}
+                onSelectAccent={(a) => handleUpdateField('accentColor', a)}
+                onApplyIndustryTemplate={(template) => {
+                  const existing = activeInvoice.items || [];
+                  const newItems = template.items.map((it) => ({
+                    name: it.name,
+                    hsn: '998313',
+                    unit: it.unit || 'Nos',
+                    qty: 1,
+                    rate: it.rate,
+                    gst: it.gst,
+                  }));
+                  handleUpdateField('items', [...existing, ...newItems]);
+                }}
+              />
+            </div>
+
             {/* Action Bar */}
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5 no-print">
               <div className="flex items-center gap-3">
@@ -322,14 +360,14 @@ export const InvoiceManager: React.FC<Props> = ({
                     setPaymentAmountInput(balanceDue);
                     setIsRecordPaymentOpen(true);
                   }}
-                  className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition"
+                  className={`px-3.5 py-2 rounded-xl ${accentConfig.bgClass} text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition`}
                 >
                   <CreditCard className="w-3.5 h-3.5" /> Record Payment
                 </button>
 
                 <button
                   onClick={() => downloadHighQualityPdf('printableInvoice', `Tax_Invoice_${activeInvoice.invoiceNumber}`)}
-                  className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition"
+                  className={`px-3.5 py-2 rounded-xl ${accentConfig.bgClass} text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition`}
                   title="Download High-Quality PDF"
                 >
                   <Download className="w-4 h-4" />
@@ -361,18 +399,32 @@ export const InvoiceManager: React.FC<Props> = ({
               {/* Supplier with Logo */}
               <div className="space-y-2">
                 <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Supplier Details</div>
-                <div className="flex items-center gap-3">
-                  {businessProfile.logoUrl ? (
-                    <img src={businessProfile.logoUrl} alt="Logo" className="w-12 h-12 object-contain rounded-xl border border-slate-200 dark:border-slate-700 p-0.5 bg-white" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
-                      {businessProfile.name?.charAt(0) || 'B'}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    {businessProfile.logoUrl ? (
+                      <img src={businessProfile.logoUrl} alt="Logo" className="w-12 h-12 object-contain rounded-xl border border-slate-200 dark:border-slate-700 p-0.5 bg-white" />
+                    ) : (
+                      <div className={`w-10 h-10 rounded-xl ${accentConfig.bgClass} text-white flex items-center justify-center font-bold text-sm`}>
+                        {businessProfile.name?.charAt(0) || 'B'}
+                      </div>
+                    )}
+                    <div>
+                      <div className="text-base font-black text-slate-900 dark:text-white">{businessProfile.name}</div>
+                      <div className="text-slate-600 dark:text-slate-400">GSTIN: <strong className="text-slate-900 dark:text-white font-mono">{businessProfile.gstin}</strong></div>
+                    </div>
+                  </div>
+
+                  {onUpdateLogo && (
+                    <div className="no-print">
+                      <LogoUploader
+                        logoUrl={businessProfile.logoUrl}
+                        onUpload={onUpdateLogo}
+                        onRemove={() => onUpdateLogo('')}
+                        compact
+                        label="Change Logo"
+                      />
                     </div>
                   )}
-                  <div>
-                    <div className="text-base font-black text-slate-900 dark:text-white">{businessProfile.name}</div>
-                    <div className="text-slate-600 dark:text-slate-400">GSTIN: <strong className="text-slate-900 dark:text-white font-mono">{businessProfile.gstin}</strong></div>
-                  </div>
                 </div>
                 <div className="text-slate-600 dark:text-slate-400">{businessProfile.address}</div>
                 <div className="text-slate-600 dark:text-slate-400">Phone: {businessProfile.phone} · Email: {businessProfile.email}</div>
