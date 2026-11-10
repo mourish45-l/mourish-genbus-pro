@@ -11,8 +11,10 @@
   html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
   body { min-width: 320px; overflow-x: hidden; }
   button, input, select, textarea { min-width: 0; }
+  img, iframe, video { max-width: 100%; }
 }
 
+/* Material Design 3 Expressive Organic Shapes */
 .shape-organic-1 { border-radius: 36px 14px 44px 18px; }
 .shape-organic-2 { border-radius: 20px 42px 16px 38px; }
 .shape-organic-blob { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
@@ -20,6 +22,7 @@
 .shape-squircle-sm { border-radius: 18px; }
 .shape-pill { border-radius: 9999px; }
 
+/* Liquid Glass Effects (Dual Light & Dark Theme) */
 .liquid-glass-dark {
   background: radial-gradient(130% 130% at 0% 0%, rgba(30, 41, 59, 0.78) 0%, rgba(15, 23, 42, 0.65) 100%);
   backdrop-filter: blur(20px) saturate(180%);
@@ -56,24 +59,31 @@ html:not(.dark) .liquid-card {
 }
 .animate-fluid-glow { animation: fluid-glow 10s ease-in-out infinite; }
 
-/* Tablet/desktop overflow and touch-friendly layout guardrails. */
-main { min-width: 0; }
-main > div, main section, main form { min-width: 0; }
-img, iframe, video { max-width: 100%; }
+/* Responsive layout guardrails for phones, tablets, laptops, and wide monitors. */
+main, main > div, main section, main form, .liquid-card { min-width: 0; }
+.overflow-x-auto { -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
 table { max-width: 100%; }
+button, input, select, textarea { font-size: max(16px, 1em); }
 
 @media (min-width: 640px) and (max-width: 1279px) {
   body:has(nav[aria-label="Mobile and Tablet Touch Navigation"]) main { padding-bottom: 6rem !important; }
+  header > div { gap: .75rem !important; }
+  main { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .liquid-card { border-radius: 24px; }
 }
+
 @media (max-width: 639px) {
   body:has(nav[aria-label="Mobile and Tablet Touch Navigation"]) main { padding-bottom: 6.5rem !important; }
-  .liquid-card { border-radius: 22px; }
+  .liquid-card { border-radius: 20px; }
+  input, select, textarea { max-width: 100%; }
+  table { min-width: 600px; }
 }
+
 @media (min-width: 1280px) {
   .responsive-workspace { max-width: 1560px; }
 }
 
-/* Print styles for A4 business documents; use browser Save as PDF for vector text quality. */
+/* Print styles for A4 business documents; browser Save as PDF preserves vector text. */
 @page { size: A4; margin: 12mm; }
 @media print {
   html, body { background: #fff !important; color: #111827 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
